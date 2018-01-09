@@ -1,0 +1,12 @@
+M = 1; #Width in x
+N = 1; #width in y
+m = 3; #number of elements in x direction
+n = 4; #number of elements in y direction
+
+originX = 0;
+originY = 0;
+
+stepi = M/n;
+stepj = N/n;
+
+# for j=
