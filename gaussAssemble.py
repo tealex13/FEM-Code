@@ -8,6 +8,7 @@ Created on Tue Jan 30 13:08:29 2018
 import numpy as np
 import matplotlib.pyplot as plt 
 import meshAssemble as mas
+import CtoX as cx
 
 
 
@@ -22,9 +23,6 @@ def numCubeMembers(n):
         memberCount[:i+1] = memberCount[:i+1]*2+np.append(0,memberCount[:i])  
    
     return memberCount[:0:-1]
-        
-def func(x):
-    return 1
 
 def parEleGPAssemble(dim, gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)], gaussWeights = [1,1] ):
     #generate Gauss points
@@ -69,11 +67,37 @@ def parEleGPAssemble(dim, gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)], gaussWeigh
     gaussPointsArray = np.append(gaussPoints,endPoints)[gaussPointNodeArray.astype(int)]
     gaussWeightsArray = np.product(np.append(gaussWeights,np.ones([1,len(endPoints)])) 
                                    [gaussPointNodeArray.astype(int)],1)
+    #tack on a zero in front of memberCount and memberSize for easier refrencing
+    memberCount = np.insert(memberCount,0,0).astype(int)
+    memberSize = np.insert(memberSize,0,0).astype(int)
     return (gaussPointsArray,gaussWeightsArray,memberCount,memberSize)   
 
 #def guassIntegrate():
 
+init = 0# not necissary all start at zero because of meshAssble code
+final = 2
+func = lambda x: np.matlib.repmat([1],len(x),1)
+dim = 1
+numEle = 1
+integationDimension = 1
+(coords,eleNodes,edges) = mas.meshAssemble(dim,numEle,final)
+(gPArray,gWArray, mCount, mSize) = parEleGPAssemble(dim)
+
+tempSum = 0
+#print (np.array(eleNodes[:,0]))
+#for i in range(mCount[integationDimension])
+j = 0 #which element we are on
+i = 0 #which member we are on
+#select the correct gP set (this will change with each member)
+startingPoint = np.sum(mCount[:integationDimension]*mSize[:integationDimension]).astype(int)+mCount[integationDimension]*i
+pointsToEval = gPArray[startingPoint:mSize[integationDimension]+startingPoint,:]
+#get the left and right node values (this will also change with each member)
+leftnode = coords[eleNodes[j,i],:]
+#print(cx.CtoX(coords[np.array(eleNodes[:,0])]))
+
+#for i in range(numEle):
+#    tempSum = func(cx.CtoX(coords(eleNodes(i))))
 if __name__ == "__main__":
 #    memberCount = numCubeMembers(1)
 #    print(memberCount)
-    (a,b,c,d) = parEleGPAssemble(1)
+    (a,b,c,d) = parEleGPAssemble(3)

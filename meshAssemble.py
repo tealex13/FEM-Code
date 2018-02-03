@@ -33,7 +33,7 @@ def eleNodes(arrays, out=None):
                 out[:int(len(out)/2),(i+1)*(m):(i+2)*(m)] = out[:int(len(out)/2):,:m]+ (o)*(i+1)
     else:
         out[:2,:arrays[0]+1] = np.vstack((np.arange(arrays[0]),np.arange(1,arrays[0]+1)))
-    return out
+    return out.astype(int)
 
 def cartesian(arrays, out=None):
     """
@@ -93,6 +93,16 @@ def edgeNodes(dim,eleNodesArray):
     return nodeVal[nodeCount<=2**(dim-1)]
 
 def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
+    # This is the main function
+    # Input:
+    # dim- dimensions
+    # m,n,o number of elements in the x,y,z directions respectively.
+    # M,N,O total length in the x,y,z direrctions respectively.
+    # Outputs:
+    # nodeCoords- the actual location of the nodes in cartesian space.
+    # eleNodesArray-  an array that relates which nodes are in each element.
+    # edgeNodesArray- array of nodes on the corner,edge,and outside surfaces.
+    
     stepx = M/m
     stepy = N/n;
     stepz = O/o;
@@ -102,11 +112,11 @@ def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
     coordsArray = (
             np.arange(m+1)*stepx,np.arange(n+1)*stepy,np.arange(o+1)*stepz)[:dim] 
 
-    eleNodesArray = eleNodes(numEle)   
+    eleNodesArray = eleNodes(numEle).astype(int)   
     nodeCoords = cartesian(coordsArray)
-    edgeNodesArray = edgeNodes(dim,eleNodesArray)
+    edgeNodesArray = edgeNodes(dim,eleNodesArray).astype(int)
 
     return (nodeCoords,eleNodesArray,edgeNodesArray)
     
-#if __name__ == "__main__":
-#    meshAssemble(2,3,1,n=2,N=1,o=1,O=1)
+if __name__ == "__main__":
+    a = meshAssemble(2,3,1,n=2,N=1,o=3,O=1)
