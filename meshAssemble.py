@@ -7,6 +7,16 @@ Created on Fri Jan 19 16:53:15 2018
 
 import numpy as np
 import matplotlib.pyplot as plt 
+import itertools
+
+def binaryCounterMatrix(dim):
+    binMat = np.zeros([2**dim,dim])
+    count = 0
+    for i in itertools.product([0,1],repeat=dim):
+        binMat[count,:] = list(i)
+        count = count+1
+    
+    return binMat.astype(int)
 
 def eleNodes(arrays, out=None):
     """
@@ -92,6 +102,32 @@ def edgeNodes(dim,eleNodesArray):
     (nodeVal,nodeCount) = np.unique(eleNodesArray,return_counts=True)
     return nodeVal[nodeCount<=2**(dim-1)]
 
+def sideNodes(dim,dimMem):
+    # sNodes generates the list of nodes in each "side" for each member of dimensions
+    # dimInt
+    #
+    # Inputs:
+    #   dim- Dimensions of the element
+    #   dimInt- Dimension of the member we are interested in, 1 for a line
+    #       2 for a surface, 3 for volume, etc.
+    # Outputs:
+    #   sNodes
+
+    dimInc = 2**(np.arange(dim,0,-1)-1)
+    binMat = binaryCounterMatrix(dim)
+    const = binMat[np.sum(binMat,1)== dimMem,:].astype(bool)
+    uncon = np.logical_not(const)
+    
+    temp = np.zeros([dim,len(const)])
+    for i in range(len(const)):
+        temp[:,i] = np.append(dimInc[uncon[i,:]],dimInc[const[i,:]])
+    listofNum = np.matmul(binMat,temp)
+    listofNum = np.reshape(listofNum,(2**dimMem,int(len(const)*2**(dim-dimMem))), order='F')
+    return listofNum.astype(int)
+    
+    
+
+
 def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
     # This is the main function
     # Input:
@@ -117,6 +153,9 @@ def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
     edgeNodesArray = edgeNodes(dim,eleNodesArray).astype(int)
 
     return (nodeCoords,eleNodesArray,edgeNodesArray)
+
+
     
 if __name__ == "__main__":
-    a = meshAssemble(2,3,1,n=2,N=1,o=3,O=1)
+#    a = meshAssemble(2,3,1,n=2,N=1,o=3,O=1)
+    a = sideNodes(2,1)

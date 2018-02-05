@@ -8,6 +8,7 @@ Created on Sat Jan 20 19:51:29 2018
 import numpy as np
 import unittest
 import loadAssemble as load
+import meshAssemble as mas
 
 class test_constraints(unittest.TestCase):
     
@@ -25,6 +26,11 @@ class test_constraints(unittest.TestCase):
         self.assertEqual(b.tolist(), 
                 ([[0.,   5.,   6.],[10.,   0.,   0.],[0.,  -3.,   0.]]))
 #    np.array( [[-1.  0.  0.][ 0. -1. -1.][-1.  0. -1.]]))
+        
+    def test_sideNodes(self):
+        a = mas.sideNodes(3,2).tolist()
+        b = [[0.,  4.,  0.,  2.,  0.,  1.],[ 1.,  5.,  1.,  3.,  2.,  3.],[ 2.,  6.,  4.,  6.,  4.,  5.],[ 3.,  7.,  5.,  7.,  6.,  7.]]
+        self.assertEqual(a,b)
 
 
 

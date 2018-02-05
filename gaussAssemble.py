@@ -25,7 +25,7 @@ def numCubeMembers(n):
     return memberCount[:0:-1]
 
 def parEleGPAssemble(dim, gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)], gaussWeights = [1,1] ):
-    #generate Gauss points
+    #generate Gauss points Array, weights array, the number of each member and the length of each member
 #    dim = 2
     
     gaussPoints = np.array(gaussPoints)
@@ -76,28 +76,38 @@ def parEleGPAssemble(dim, gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)], gaussWeigh
 
 init = 0# not necissary all start at zero because of meshAssble code
 final = 2
-func = lambda x: np.matlib.repmat([1],len(x),1)
-dim = 1
+#func = lambda x: np.ones(len(x))
+func = lambda x: x[:,0]
+
+dim = 4
 numEle = 1
-integationDimension = 1
+dimMem = 2
 (coords,eleNodes,edges) = mas.meshAssemble(dim,numEle,final)
 (gPArray,gWArray, mCount, mSize) = parEleGPAssemble(dim)
+sideNodes = mas.sideNodes(dim,dimMem)
 
 tempSum = 0
 #print (np.array(eleNodes[:,0]))
-#for i in range(mCount[integationDimension])
+#for i in range(mCount[dimMem])
 j = 0 #which element we are on
 i = 0 #which member we are on
 #select the correct gP set (this will change with each member)
-startingPoint = np.sum(mCount[:integationDimension]*mSize[:integationDimension]).astype(int)+mCount[integationDimension]*i
-pointsToEval = gPArray[startingPoint:mSize[integationDimension]+startingPoint,:]
+startingPoint = np.sum(mCount[:-dimMem]*mSize[:-dimMem]).astype(int)+mCount[-dimMem]*i
+pointsToEval = gPArray[startingPoint:mSize[-dimMem]+startingPoint,:]
+weights = gWArray[startingPoint:mSize[-dimMem]+startingPoint,]
 #get the left and right node values (this will also change with each member)
-leftnode = coords[eleNodes[j,i],:]
+
+nodeCoordsLeft = np.matlib.repmat(coords[eleNodes[0,j],:],len(pointsToEval[:,0]),1)
+nodeCoordsRight = np.matlib.repmat(coords[eleNodes[-1,j],:],len(pointsToEval[:,0]),1)
+print(nodeCoordsLeft,'\n',nodeCoordsRight)
+xValues = cx.CtoX(pointsToEval,nodeCoordsLeft,nodeCoordsRight)
+integral  = sum(func(xValues)*weights)*np.linalg.det(cx.jacobian(nodeCoordsLeft[0,:],nodeCoordsRight[0,:]))
+
 #print(cx.CtoX(coords[np.array(eleNodes[:,0])]))
 
 #for i in range(numEle):
 #    tempSum = func(cx.CtoX(coords(eleNodes(i))))
-if __name__ == "__main__":
+#if __name__ == "__main__":
 #    memberCount = numCubeMembers(1)
 #    print(memberCount)
-    (a,b,c,d) = parEleGPAssemble(3)
+#    (a,b,c,d) = parEleGPAssemble(3)

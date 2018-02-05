@@ -15,7 +15,7 @@ def CtoX(C,nodeCoordsLeft,nodeCoordsRight):
 
 def jacobian(nodeCoordsLeft,nodeCoordsRight):
 
-    return np.matlib.repmat((nodeCoordsRight-nodeCoordsLeft)/2,len(nodeCoordsRight),1)
+    return np.diag((nodeCoordsRight-nodeCoordsLeft)/2)
 
 
     
