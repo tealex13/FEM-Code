@@ -128,7 +128,7 @@ def sideNodes(dim,dimMem):
     
 
 
-def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
+def meshAssemble(numEle,eleSize):
     # This is the main function
     # Input:
     # dim- dimensions
@@ -139,14 +139,18 @@ def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
     # eleNodesArray-  an array that relates which nodes are in each element.
     # edgeNodesArray- array of nodes on the corner,edge,and outside surfaces.
     
-    stepx = M/m
-    stepy = N/n;
-    stepz = O/o;
+    dim = len(numEle)
+#    stepx = M/m
+#    stepy = N/n;
+#    stepz = O/o;
     
 #    width = [M,N,O][:dim]
-    numEle = [m,n,o][:dim]    
-    coordsArray = (
-            np.arange(m+1)*stepx,np.arange(n+1)*stepy,np.arange(o+1)*stepz)[:dim] 
+    numEle = np.array(numEle)
+    eleSize = np.array(eleSize)
+    coordsArray = []
+    for i in range(dim):   
+        coordsArray.append((np.arange(numEle[i]+1)*eleSize[i]/numEle[i]).tolist())
+#            np.arange(m+1)*stepx,np.arange(n+1)*stepy,np.arange(o+1)*stepz)[:dim] 
 
     eleNodesArray = eleNodes(numEle).astype(int)   
     nodeCoords = cartesian(coordsArray)
@@ -157,5 +161,5 @@ def meshAssemble(dim,m,M,n=1,N=1,o=1,O=1):
 
     
 if __name__ == "__main__":
-#    a = meshAssemble(2,3,1,n=2,N=1,o=3,O=1)
-    a = sideNodes(2,1)
+    a = meshAssemble([1,2,3],[1,1,1])
+#    a = sideNodes(2,1)
