@@ -161,5 +161,10 @@ def meshAssemble(numEle,eleSize):
 
     
 if __name__ == "__main__":
-    a = meshAssemble([1,2,3],[1,1,1])
+#    a = meshAssemble([1,2,3],[1,1,1])
 #    a = sideNodes(2,1)
+    y = lambda x: 1
+    n = lambda x: 2
+    q = lambda x: x
+    b = lambda x: x*2
+    a = cartesian(([y,n],[q,b]))

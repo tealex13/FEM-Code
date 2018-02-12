@@ -72,44 +72,55 @@ def parEleGPAssemble(dim, gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)], gaussWeigh
     memberSize = np.insert(memberSize,0,0).astype(int)
     return (gaussPointsArray,gaussWeightsArray,memberCount,memberSize)   
 
-#def guassIntegrate():
+def gaussIntegrate(numEle,final,dimMem,func):
+    """
+    This function performs gauss quadriture integration
+    
+    INPUTS:
+        numEle- number of elements in each dimension, list form
+        final- size of space in each dimension, list
+        dimMem- dimension of the members to integrate, int
+        func- function to be integrated, inputs x for func(x) should be of the
+                form [[x1,y1,z1,...],[x2,y2,z2,...],...]
+    
+    OUTPUTS:
+        integral- sum of the all the integrated members across all elements
+    """
+    dim = len(numEle)
+    (coords,eleNodes,edges) = mas.meshAssemble(numEle,final)
+    (gPArray,gWArray, mCount, mSize) = parEleGPAssemble(dim)
 
-init = 0# not necissary all start at zero because of meshAssble code
-numEle = [1,1,1]
-final = [1,1,1]
-dim = len(numEle)
-#func = lambda x: np.ones(len(x))
-func = lambda x: x[:,0]**3
-dimMem = dim # Dimension of member being integrated
+    integral = 0
+    for j in range(np.prod(numEle)): #Iterate through each element
+        for i in range(mCount[-dimMem]): #Iterate through each member
+            #select the correct gP set (this will change with each member)
+            startingPoint = np.sum(mCount[:-dimMem]*mSize[:-dimMem]).astype(int)+mSize[-dimMem]*i
+            pointsToEval = gPArray[startingPoint:mSize[-dimMem]+startingPoint,:]
+            weights = gWArray[startingPoint:mSize[-dimMem]+startingPoint,]
+            #get the left and right node values (this will also change with each member)
+            
+            nodeCoordsLeft = np.matlib.repmat(coords[eleNodes[0,j],:],len(pointsToEval[:,0]),1)
+            nodeCoordsRight = np.matlib.repmat(coords[eleNodes[-1,j],:],len(pointsToEval[:,0]),1)
+            #print(nodeCoordsLeft,'\n',nodeCoordsRight)
+            xValues = cx.CtoX(pointsToEval,nodeCoordsLeft,nodeCoordsRight)
+            integral  = sum(func(xValues)*weights)*np.linalg.det(cx.jacobian(nodeCoordsLeft[0,:],nodeCoordsRight[0,:]))+integral
+
+    return integral
 
 
 
-(coords,eleNodes,edges) = mas.meshAssemble(numEle,final)
-(gPArray,gWArray, mCount, mSize) = parEleGPAssemble(dim)
-sideNodes = mas.sideNodes(dim,dimMem)
 
-tempSum = 0
-#print (np.array(eleNodes[:,0]))
-#for i in range(mCount[dimMem])
-j = 0 #which element we are on
-i = 0 #which member we are on
-#select the correct gP set (this will change with each member)
-startingPoint = np.sum(mCount[:-dimMem]*mSize[:-dimMem]).astype(int)+mSize[-dimMem]*i
-pointsToEval = gPArray[startingPoint:mSize[-dimMem]+startingPoint,:]
-weights = gWArray[startingPoint:mSize[-dimMem]+startingPoint,]
-#get the left and right node values (this will also change with each member)
-
-nodeCoordsLeft = np.matlib.repmat(coords[eleNodes[0,j],:],len(pointsToEval[:,0]),1)
-nodeCoordsRight = np.matlib.repmat(coords[eleNodes[-1,j],:],len(pointsToEval[:,0]),1)
-#print(nodeCoordsLeft,'\n',nodeCoordsRight)
-xValues = cx.CtoX(pointsToEval,nodeCoordsLeft,nodeCoordsRight)
-integral  = sum(func(xValues)*weights)*np.linalg.det(cx.jacobian(nodeCoordsLeft[0,:],nodeCoordsRight[0,:]))
-
-#print(cx.CtoX(coords[np.array(eleNodes[:,0])]))
-
-#for i in range(numEle):
-#    tempSum = func(cx.CtoX(coords(eleNodes(i))))
 #if __name__ == "__main__":
 #    memberCount = numCubeMembers(1)
 #    print(memberCount)
 #    (a,b,c,d) = parEleGPAssemble(3)
+    
+#    numEle = [1,1,1]
+#    final = [1,1,1]
+#    func = lambda x: np.ones(len(x))
+#    #func = lambda x: x[:,0]**3
+#    #func = lambda x: np.prod(x,axis=1)
+#    dimMem = 3 # Dimension of member being integrated
+#    
+#    
+#    integral = gaussIntegrate(numEle,final,dimMem,func)
