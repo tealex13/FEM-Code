@@ -135,8 +135,10 @@ def meshAssemble(numEle,eleSize):
     # m,n,o number of elements in the x,y,z directions respectively.
     # M,N,O total length in the x,y,z direrctions respectively.
     # Outputs:
-    # nodeCoords- the actual location of the nodes in cartesian space.
+    # nodeCoords- the actual location of the nodes in cartesian space. In the form
+    #   [[x1,y1,z1,...],[x2,y2,z2,],[x3,y3,z3],...]
     # eleNodesArray-  an array that relates which nodes are in each element.
+    #   Each column is a different elements for example col=0 is the element 0.
     # edgeNodesArray- array of nodes on the corner,edge,and outside surfaces.
     
     dim = len(numEle)
