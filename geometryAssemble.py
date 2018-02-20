@@ -70,13 +70,16 @@ def combonator(evalDim,dim):
     temp = temp[np.sum(temp,1)==evalDim,:]
     return(temp)
     
-def detAssemble(evalDim,dim,mCount):
-    temp = combonator(evalDim,dim)
-    
+def detAssemble(dim,mCount):
+    detArray = np.empty((0,dim),int)
     reps = [1]+(mCount[2:]/dim).astype(int).tolist()
-    np.repeat(temp, reps, axis=0)
+    for i in range(dim,0,-1):
+        temp = combonator(i,dim)
+        temp = np.repeat(temp,[reps[-i]]*len(temp[:,0]),axis=0)
+        detArray = np.append(detArray,temp,axis=0)
+    return detArray
     
-    
+
 #def gaussJacobian(S,dim,bassisArray,mCount,mSize,divDim = 0):
 #    sDim = memDim(S,dim,mCount)
 #    for i in range(mSize[-sDim]): #step through each gauss point
@@ -99,7 +102,7 @@ basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mC
 (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
 
 #print(CtoX([0,0],eleNodesArray,nodeCoords))
-combonator(2,3)
+detArray = detAssemble(dim,mCount)
 #basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 1)
 #print("\n",basisSubset,'\n')
 #x = gausstoX(basisSubset,eleNodesArray,nodeCoords)
