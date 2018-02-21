@@ -14,6 +14,10 @@ import gaussAssemble as gas
 
 
 def unpackBasis(basisFuncArray,pointsToEval):
+    '''
+    This function evaluates each basis function and derivative at a point
+    '''
+    
     tempArray = np.zeros(basisFuncArray.shape)
     for i in range(len(basisFuncArray[:,0])): #Iterate through each combination of basis funcitions
         for j in range(len(basisFuncArray[0,:])): #Iterate through basis in the combination
@@ -22,7 +26,10 @@ def unpackBasis(basisFuncArray,pointsToEval):
     return tempArray
 
 def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
-    
+    '''
+    This function assembles the matrix of basis functions and derivatives for a single dimension
+    and calles 'unpackBasis' for each set
+    '''
     
     b0 = lambda x:1/2*(1-x)
     b1 = lambda x:1/2*(1+x)
@@ -57,6 +64,18 @@ def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray,gWArray, mCou
 
 
 def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
+    '''
+    This function computes the values of the basis functions and derivatives of the 
+    basis functions at each gaussPoint.
+    It iterates calls 'basisArrayPartAssemble' for each dimension and assembles the matrices. 
+    
+    OUTPUT:
+        basisArray- is the matrix of basis functions evaluated at the gauss point
+            form: [N0(GP0),dN0(GP0[0]),dN0(GP0[1]),...N0(GP1),dN0(GP1[0]),dN0(GP1[1])...],...
+                [N1(GP1),dN1(GP1[0]),dN1(GP1[1]),...N1(GP1),dN1(GP1[0]),dN1(GP1[1])...],...
+                ...]
+                This is repeated for each member
+    '''
     
     basisArray = np.zeros([numBasis**dim,(1+dim)*sum(mCount*mSize).astype(int)])
     startingPoint = 0
@@ -64,7 +83,8 @@ def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
         basisArray[:,startingPoint:startingPoint+(1+dim)*mCount[-(i)]*mSize[-(i)]] = basisArrayPartAssemble(
                 dim,i,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
         startingPoint = startingPoint + (1+dim)*mCount[-(i)]*mSize[-(i)]
-    return basisArray   
+    return basisArray  
+ 
 if __name__ == "__main__":
     dim = 2
 
