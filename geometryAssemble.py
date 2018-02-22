@@ -124,7 +124,7 @@ def detAssemble(dim,mCount):
     return detArray
 
     
-def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray):
+def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray):
     '''
     Returns the jacobian matrix of the gauss point for member S of elemenet ele
     INPUT:
@@ -209,41 +209,43 @@ def stupidNormals(S,hardCodedJac,dim):
             print('error: S outside of range')
     return(normal)
 
-def basisToX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac):
+def basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac):
     basisSubsetGP = basisSubsetGaussPoint(S,gaussPoint,dim,basisArray,mCount,mSize)
-    basisToXArray = np.zeros(basisSubsetGP[:,1:].shape)
+    basisdXArray = np.zeros(basisSubsetGP[:,1:].shape)
     for i in range(len(basisArray[:,0])):
-        basisToXArray[i,:] = np.matmul(basisSubsetGP[i,1:],LA.inv(hardCodedJac[:dim,:dim]))
-        print(basisSubsetGP[i,1:],'\n')
-    return(basisToXArray)
-
-dim = 2
-numEle = [1]*dim
-eleSize = [1]*dim
-numBasis = 2
-gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
-#gaussPoints = [-1,1]
-(gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
-basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
-
-(nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
-
-#print(CtoX([0,0],eleNodesArray,nodeCoords))
-detArray = detAssemble(dim,mCount)
-
-ele = 0
-S = 0
-gaussPoint = 0
+        basisdXArray[i,:] = np.matmul(basisSubsetGP[i,1:],LA.inv(hardCodedJac[:dim,:dim]))
+    return(basisdXArray)
 
 
-(intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray)
-temp = basisToX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac)
-print(temp)
-#basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
-#print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))
-#for i in range(0,8):
-#    (intScalFact,hardCodedJac) = gaussJacobian(i,ele,gaussPoints[0],dim,basisArray,mCount,mSize,detArray)
-#    print(intScalFact)
-#
-#    normal = stupidNormals(i,hardCodedJac,dim)
-#    print(normal)
+if __name__ == '__main__':
+    
+    dim = 2
+    numEle = [1]*dim
+    eleSize = [1]*dim
+    numBasis = 2
+    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+    #gaussPoints = [-1,1]
+    (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
+    basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
+    
+    (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+    
+    #print(CtoX([0,0],eleNodesArray,nodeCoords))
+    detArray = detAssemble(dim,mCount)
+    
+    ele = 0
+    S = 0
+    gaussPoint = 0
+    
+    
+    (intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
+    temp = basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac)
+    print(temp)
+    #basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
+    #print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))
+    #for i in range(0,8):
+    #    (intScalFact,hardCodedJac) = gaussJacobian(i,ele,gaussPoints[0],dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
+    #    print(intScalFact)
+    #
+    #    normal = stupidNormals(i,hardCodedJac,dim)
+    #    print(normal)

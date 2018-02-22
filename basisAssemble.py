@@ -25,7 +25,7 @@ def unpackBasis(basisFuncArray,pointsToEval):
             
     return tempArray
 
-def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
+def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray, mCount, mSize):
     '''
     This function assembles the matrix of basis functions and derivatives for a single dimension
     and calles 'unpackBasis' for each set
@@ -63,7 +63,7 @@ def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray,gWArray, mCou
     return basisArrayPart
 
 
-def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
+def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize):
     '''
     This function computes the values of the basis functions and derivatives of the 
     basis functions at each gaussPoint.
@@ -81,7 +81,7 @@ def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize):
     startingPoint = 0
     for i in range(dim,0,-1): #Iterate through each group of members
         basisArray[:,startingPoint:startingPoint+(1+dim)*mCount[-(i)]*mSize[-(i)]] = basisArrayPartAssemble(
-                dim,i,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
+                dim,i,numBasis,gaussPoints,gPArray, mCount, mSize)
         startingPoint = startingPoint + (1+dim)*mCount[-(i)]*mSize[-(i)]
     return basisArray  
  
@@ -91,4 +91,4 @@ if __name__ == "__main__":
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]  
     (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
-    basisArray = basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
+    basisArray = basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
