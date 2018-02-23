@@ -210,6 +210,9 @@ def stupidNormals(S,hardCodedJac,dim):
     return(normal)
 
 def basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac):
+    '''
+    Function returns all of the basis partial derivatives in the X domain
+    '''
     basisSubsetGP = basisSubsetGaussPoint(S,gaussPoint,dim,basisArray,mCount,mSize)
     basisdXArray = np.zeros(basisSubsetGP[:,1:].shape)
     for i in range(len(basisArray[:,0])):
@@ -234,12 +237,13 @@ if __name__ == '__main__':
     detArray = detAssemble(dim,mCount)
     
     ele = 0
-    S = 0
+    S = 1
     gaussPoint = 0
     
     
     (intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
     temp = basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac)
+    temp = stupidNormals(S,hardCodedJac,dim)
     print(temp)
     #basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
     #print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))

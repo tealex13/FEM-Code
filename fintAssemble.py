@@ -26,21 +26,28 @@ def bAssemble(basisdX):
         b = np.array([[1,0,0],[0,2,0],[0,0,3],[0,3,2],[3,0,1],[2,1,0]])
         b = basisdX[b]
     return(b)
-    
-#def dispToStrain(disp):
-    
 
-if __name__ == '__main__':
-    dim = 2
-    numEle = [1]*dim
-    eleSize = [1]*dim
-    numBasis = 2
-    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
-    E = 180*10**9 #modulus
-    v = .3 #poisons ratio
+def stressAssemble(strain,E,v,dim):
     gams = E*v/((1+v)*(1-2*v))  
     G = E/(2*(1+v))
     boB = 2*G+gams
+    if dim == 2:
+        constit = np.array([[1,v,0],[v,1,0],[0,0,1-v]])*E/(1-v**2)
+    elif dim == 3:
+        constit = np.array([[boB,gams,gams,0,0,0],[gams,boB,gams,0,0,0],[gams,gams,boB,0,0,0],[0,0,0,G,0,0],[0,0,0,0,G,0],[0,0,0,0,0,G]])
+    stress = np.matmul(constit,strain)
+    return(stress)
+#def dispToStrain(disp):
+
+if __name__ == '__main__':
+    dim = 2
+    numEle = [2]*dim
+    eleSize = [2]*dim
+    numBasis = 2
+    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+    E = 200*10**9 #modulus
+    v = 0 #poisons ratio
+
     
     #gaussPoints = [-1,1]
     (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
@@ -48,24 +55,27 @@ if __name__ == '__main__':
     
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
-    disp = np.ones([np.prod(numEle)*np.sum(mCount*mSize),dim])*.001
-    disp[0,:] = 0
-    disp[1:,1] = 0
+    disp = np.ones([len(nodeCoords[:,0]),dim])*0
+    disp[[0,3,6],:] = 0
+    disp[[1,4,7],:] = .12
+    disp[:,1:] = 0
+    
+#    disp[[0,2,4,6],:] = 0
+#    disp[[1,3,5,7],:] = .12
+#    disp[:,1:] = 0
     
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
     detArray = geas.detAssemble(dim,mCount)
     
     
-    Fint = np.zeros([mCount[-dim]*mSize[-dim]*np.prod(numEle)*len(basisArray[:,0]),dim])
+    Fint = np.zeros([len(nodeCoords[:,0]),dim])
     for i in range(np.prod(numEle)): #Iterate through each element
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
-        startingPoint = np.sum(mCount[-(memDim+1)]*mSize[-(memDim+1)])+S*mSize[-memDim]
-#        print(startingPoint)
-        tempDisp = disp[startingPoint:startingPoint+mSize[-memDim],:]
-#        print(i)
+        tempDisp = disp[eleNodesArray[:,i],:]
+        Fa = np.zeros([len(basisArray[:,0]),dim])
         for j in range(mSize[-memDim]): #Iterate through each gauss point 
-#            print(j)
+
             # Construct basis at GP
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
@@ -77,19 +87,16 @@ if __name__ == '__main__':
                 Ba = bAssemble(basisdXArray[k,:])
 #                print(Ba,'\n')
                 strain = strain + np.matmul(Ba,tempDisp[k,:])
-
+            
+            print(strain,'\n')
             # Calculate Stress
-            if dim == 2:
-                constit = np.array([[1,v,0],[v,1,0],[0,0,1-v]])*E/(1-v**2)
-            elif dim == 3:
-                constit = np.array([[boB,gams,gams,0,0,0],[gams,boB,gams,0,0,0],[gams,gams,boB,0,0,0],[0,0,0,G,0,0],[0,0,0,0,G,0],[0,0,0,0,0,G]])
-            sigma = np.matmul(constit,strain)
-            Fa = np.zeros([len(basisSubset),dim])
+            stress = stressAssemble(strain,E,v,dim)
+            
             for k in range(len(basisSubset)): #iterate through each basis
                 Ba = bAssemble(basisdXArray[k,:])
 #                for l in range(dim):
-#                   a = np.matmul(np.identity(dim)[l,:],np.matmul(np.transpose(Ba),sigma))*intScalFact*gWArray[j]
+#                   a = np.matmul(np.identity(dim)[l,:],np.matmul(np.transpose(Ba),stress))*intScalFact*gWArray[j]
 #                   print(a)
-                Fa[k,:] = np.matmul(np.transpose(Ba),sigma)*intScalFact*gWArray[j]+Fa[k,:]
-            startingPointInternal = i*mCount[-dim]*mSize[-dim]*len(basisArray[:,0])+j*len(basisArray[:,0])
-            Fint[startingPointInternal:startingPointInternal+len(basisArray[:,0]),:] = Fa 
+                Fa[k,:] = np.matmul(np.transpose(Ba),stress)*intScalFact*gWArray[j]+Fa[k,:]
+        startingPointInternal = i*mCount[-dim]*mSize[-dim]*len(basisArray[:,0])
+        Fint[eleNodesArray[:,i],:] = Fa+Fint[eleNodesArray[:,i],:]

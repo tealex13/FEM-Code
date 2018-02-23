@@ -50,10 +50,10 @@ def constraints(dim, numNodes, nodeArray, dimArray, values):
     #    print(constVal,"\n")
         return (constHas,constVal)
 #    
-#if __name__ == "__main__":
-#    dim = 3
-#    numNodes = 3
-#    nodeArray = np.array([0,1,1,2])
-#    dimArray = np.array([1,2,0,0])
-#    values = np.array([10,-3,5,6])
-#    test = constraints(dim, numNodes, nodeArray, dimArray, values)[0].tolist()
+if __name__ == "__main__":
+    dim = 2
+    numNodes = 4
+    nodeArray = np.array([0,1,1,2])
+    dimArray = np.array([1,2,0,0])
+    values = np.array([10,-3,5,6])
+    (constHas,constVal) = constraints(dim, numNodes, nodeArray, dimArray, values)
