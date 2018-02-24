@@ -27,7 +27,7 @@ def bAssemble(basisdX):
         b = basisdX[b]
     return(b)
 
-def stressAssemble(strain,E,v,dim):
+def constitAssemble(E,v,dim):
     gams = E*v/((1+v)*(1-2*v))  
     G = E/(2*(1+v))
     boB = 2*G+gams
@@ -37,9 +37,44 @@ def stressAssemble(strain,E,v,dim):
         constit = np.array([[1,v,0],[v,1,0],[0,0,1-v]])*E/(1-v**2)
     elif dim == 3:
         constit = np.array([[boB,gams,gams,0,0,0],[gams,boB,gams,0,0,0],[gams,gams,boB,0,0,0],[0,0,0,G,0,0],[0,0,0,0,G,0],[0,0,0,0,0,G]])
-    stress = np.matmul(constit,strain)
-    return(stress)
+    
+    return(constit)
 #def dispToStrain(disp):
+    
+def FintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp):
+    
+    Fint = np.zeros([len(nodeCoords[:,0]),dim])
+    for i in range(np.prod(numEle)): #Iterate through each element
+        S = 0 # (S=0 for internal)
+        memDim = geas.memDim(S,dim,mCount)
+        tempDisp = disp[eleNodesArray[:,i],:]
+        Fa = np.zeros([len(basisArray[:,0]),dim])
+        for j in range(mSize[-memDim]): #Iterate through each gauss point 
+
+            # Construct basis at GP
+            (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+            basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
+            # Contruct Geometry at GP
+            basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
+            # Compute Current Strain
+            strain = 0
+            for k in range(len(basisSubset)): #iterate through each basis
+                Ba = bAssemble(basisdXArray[k,:])
+                strain = strain + np.matmul(Ba,tempDisp[k,:])
+
+            strain[strain<1e-16]=0 #Cheating, getting rid of really small pesky strains
+
+            # Calculate Stress
+            stress = np.matmul(constit,strain)
+            for k in range(len(basisSubset)): #iterate through each basis
+                Ba = bAssemble(basisdXArray[k,:])
+#                for l in range(dim):
+#                   a = np.matmul(np.identity(dim)[l,:],np.matmul(np.transpose(Ba),stress))*intScalFact*gWArray[j]
+#                   print(a)
+                Fa[k,:] = np.matmul(np.transpose(Ba),stress)*intScalFact*gWArray[j]+Fa[k,:]
+#        print(Fa)
+        Fint[eleNodesArray[:,i],:] = Fa+Fint[eleNodesArray[:,i],:]
+    return(Fint)
 
 if __name__ == '__main__':
     dim = 2
@@ -72,39 +107,7 @@ if __name__ == '__main__':
 #    disp[:,1:] = 0
     
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
-    detArray = geas.detAssemble(dim,mCount)
+    constit = constitAssemble(E,v,dim)
     
+    Fin = FintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp)
     
-    Fint = np.zeros([len(nodeCoords[:,0]),dim])
-    for i in range(np.prod(numEle)): #Iterate through each element
-        S = 0 # (S=0 for internal)
-        memDim = geas.memDim(S,dim,mCount)
-        tempDisp = disp[eleNodesArray[:,i],:]
-        Fa = np.zeros([len(basisArray[:,0]),dim])
-        for j in range(mSize[-memDim]): #Iterate through each gauss point 
-
-            # Construct basis at GP
-            (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
-            basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
-            # Contruct Geometry at GP
-            basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
-            # Compute Current Strain
-            strain = 0
-            for k in range(len(basisSubset)): #iterate through each basis
-                Ba = bAssemble(basisdXArray[k,:])
-                strain = strain + np.matmul(Ba,tempDisp[k,:])
-
-            strain[strain<1e-16]=0 #Cheating, getting rid of really small pesky strains
-
-            # Calculate Stress
-            stress = stressAssemble(strain,E,v,dim)
-            
-            for k in range(len(basisSubset)): #iterate through each basis
-                Ba = bAssemble(basisdXArray[k,:])
-#                for l in range(dim):
-#                   a = np.matmul(np.identity(dim)[l,:],np.matmul(np.transpose(Ba),stress))*intScalFact*gWArray[j]
-#                   print(a)
-                Fa[k,:] = np.matmul(np.transpose(Ba),stress)*intScalFact*gWArray[j]+Fa[k,:]
-        startingPointInternal = i*mCount[-dim]*mSize[-dim]*len(basisArray[:,0])
-#        print(Fa)
-        Fint[eleNodesArray[:,i],:] = Fa+Fint[eleNodesArray[:,i],:]

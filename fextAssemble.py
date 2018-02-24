@@ -14,32 +14,7 @@ import basisAssemble as bas
 import geometryAssemble as geas
 import fintAssemble as fint
 
-if __name__ == '__main__':
-    dim = 2
-    numEle = [2]*dim
-    eleSize = [2]*dim
-    numBasis = 2
-    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
-    
-    #gaussPoints = [-1,1]
-    (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
-    basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
-    
-    (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
-  
-    detArray = geas.detAssemble(dim,mCount)
-
-    # Construct force field
-    numNodes = 2**dim*np.prod(numEle)
-#    nodeArray = np.array([1,3])
-#    dimArray = np.array([0,0])
-#    values = np.array([1,1])*10**8
-    nodeArray = np.array([1])
-    dimArray = np.array([0])
-    values = np.array([1])*10**8
-    (constHas,constVal) = load.constraints(dim, numNodes, nodeArray, dimArray, values)
-    
-    
+def FextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constHas,constVal):
     Fext = np.zeros([len(nodeCoords[:,0]),dim])
     for i in range(np.prod(numEle)): #Iterate through each element
 #        print('\n')
@@ -60,7 +35,7 @@ if __name__ == '__main__':
             for j in range(mSize[-memDim]): #Iterate through each gauss point
                                
                 # Construct basis at GP
-                (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
+                (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
                 if S>0:
                     tempNormals = geas.stupidNormals(S,hardCodedJac,dim)
                 basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
@@ -101,3 +76,32 @@ if __name__ == '__main__':
                                 
                                 
             Fext[tempNodes,:] = Fa +Fext[tempNodes,:]
+        return(Fext)
+
+
+if __name__ == '__main__':
+    dim = 2
+    numEle = [1]*dim
+    eleSize = [2]*dim
+    numBasis = 2
+    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+    
+    #gaussPoints = [-1,1]
+    (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
+    basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
+    
+    (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+
+    # Construct force field
+    numNodes = 2**dim*np.prod(numEle)
+#    nodeArray = np.array([1,3])
+#    dimArray = np.array([0,0])
+#    values = np.array([1,1])*10**8
+    nodeArray = np.array([1])
+    dimArray = np.array([0])
+    values = np.array([1])*10**8
+    (constHas,constVal) = load.constraints(dim, numNodes, nodeArray, dimArray, values)
+    
+    Fext = FextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constHas,constVal)
+    
+   

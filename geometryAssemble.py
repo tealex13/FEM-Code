@@ -125,7 +125,7 @@ def detAssemble(dim,mCount):
     return detArray
 
     
-def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray):
+def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray):
     '''
     Returns the jacobian matrix of the gauss point for member S of elemenet ele
     INPUT:
@@ -136,7 +136,7 @@ def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoor
         intScalFact- The Integral Scaling Factor
         hardCodedJac- The 3x3 jacobian matrix of the form [[dx/dn,dx/dm,dx/do],[dy/dn,dy/dm,dy/do],[dz/dn,dz/dm,dz/do]]
     '''
-        
+    detArray = detAssemble(dim,mCount)    
     intScalFact = np.zeros([dim,dim])
     hardCodedJac = np.zeros([3,3])
     for i in range(dim): #step through each parent dimension
@@ -235,7 +235,6 @@ if __name__ == '__main__':
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
-    detArray = detAssemble(dim,mCount)
     
     ele = 0
     for i in range(np.sum(mCount)): #iterate through S
@@ -245,7 +244,7 @@ if __name__ == '__main__':
     
     
     
-#    (intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
+#    (intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
 #    temp = basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac)
 #    temp = stupidNormals(S,hardCodedJac,dim)
 #    print(temp)
