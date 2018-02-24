@@ -48,9 +48,7 @@ if __name__ == '__main__':
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
-    v = 0 #poisons ratio
-
-    stressAssemble(np.identity(dim),E,v,dim)
+    v = 0.3 #poisons ratio
     
     #gaussPoints = [-1,1]
     (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
@@ -83,25 +81,21 @@ if __name__ == '__main__':
         memDim = geas.memDim(S,dim,mCount)
         tempDisp = disp[eleNodesArray[:,i],:]
         Fa = np.zeros([len(basisArray[:,0]),dim])
-        print('element', i)
         for j in range(mSize[-memDim]): #Iterate through each gauss point 
 
             # Construct basis at GP
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
-#            print(basisdXArray,'\n')
             # Contruct Geometry at GP
             basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
             # Compute Current Strain
             strain = 0
-#            print('Gauss Point',j)
             for k in range(len(basisSubset)): #iterate through each basis
                 Ba = bAssemble(basisdXArray[k,:])
-#                print(Ba,'\n')
                 strain = strain + np.matmul(Ba,tempDisp[k,:])
 
-#            print(strain,'\n')
-#            print(basisdXArray,'\n')
+            strain[strain<1e-16]=0 #Cheating, getting rid of really small pesky strains
+
             # Calculate Stress
             stress = stressAssemble(strain,E,v,dim)
             

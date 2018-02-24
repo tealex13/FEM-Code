@@ -24,8 +24,8 @@ def indexAssemble(eleNodesArray,dim):
 
 if __name__ == "__main__":
 
-    dim = 3
-    numEle = [1]*dim
+    dim = 2
+    numEle = [2]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
