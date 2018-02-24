@@ -7,6 +7,7 @@ Created on Fri Jan 19 16:53:15 2018
 
 import numpy as np
 import matplotlib.pyplot as plt 
+from mpl_toolkits.mplot3d import axes3d, Axes3D #<-- Note the capitalization! 
 import itertools
 
 def binaryCounterMatrix(dim):
@@ -174,10 +175,26 @@ def sNodes(S,dim):
             print('Error in sNodes')
     
 if __name__ == "__main__":
-#    a = meshAssemble([1,2,3],[1,1,1])
-#    a = sideNodes(2,1)
-    y = lambda x: 1
-    n = lambda x: 2
-    q = lambda x: x
-    b = lambda x: x*2
-    a = cartesian(([y,n],[q,b]))
+    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([1,2,3],[1,2,3])
+    fig = plt.figure(1)
+    ax = Axes3D(fig)
+    ax.scatter(nodeCoords[:,0], nodeCoords[:,1], nodeCoords[:,2],cmap='Greens')
+    plt.show()
+    
+    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([2,2],[2,2])
+    fig2 = plt.figure(2)
+    ax2 = fig2.add_subplot(111)
+    ax2.scatter(nodeCoords[:,0], nodeCoords[:,1],cmap='Greens')
+    plt.show()
+
+    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([9],[3])
+    fig3 = plt.figure(3)
+    ax3 = fig3.add_subplot(111)
+    ax3.scatter(nodeCoords[:,0],np.zeros(len(nodeCoords[:,0])),cmap='Greens')
+    plt.show()
+
+#    y = lambda x: 1
+#    n = lambda x: 2
+#    q = lambda x: x
+#    b = lambda x: x*2
+#    a = cartesian(([y,n],[q,b]))

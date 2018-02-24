@@ -31,9 +31,9 @@ if __name__ == '__main__':
 
     # Construct force field
     numNodes = 2**dim*np.prod(numEle)
-    nodeArray = np.array([0,1,1,2])
-    dimArray = np.array([1,1,0,0])
-    values = np.array([10,-3,5,6])*1000
+    nodeArray = np.array([1,3])
+    dimArray = np.array([0,0])
+    values = np.array([1,1])*10**8
     (constHas,constVal) = load.constraints(dim, numNodes, nodeArray, dimArray, values)
     
     
