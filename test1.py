@@ -108,13 +108,13 @@ class test_constraints(unittest.TestCase):
         numBasis = 2
         gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
         (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
-        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
         self.assertAlmostEqual(basisArray.tolist(),
                                [[0.7886751345948129, -0.5, 0.21132486540518708, -0.5],
                                 [0.21132486540518708, 0.5, 0.7886751345948129, 0.5]])
         dim = 2
         (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
-        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,gWArray, mCount, mSize)
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
         self.assertTrue((np.around(basisArray,8)==
                                np.array([[ 0.62200847, -0.39433757, -0.39433757,  0.16666667, -0.39433757,
                                     -0.10566243,  0.16666667, -0.10566243, -0.39433757,  0.0446582 ,

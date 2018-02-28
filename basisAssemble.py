@@ -62,7 +62,6 @@ def basisArrayPartAssemble(dim,dimMem,numBasis,gaussPoints,gPArray, mCount, mSiz
 
     return basisArrayPart
 
-
 def basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize):
     '''
     This function computes the values of the basis functions and derivatives of the 

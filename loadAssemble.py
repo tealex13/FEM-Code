@@ -7,7 +7,7 @@ Created on Sat Jan 20 19:03:56 2018
 
 import numpy as np
 
-def constraints(dim, numNodes, nodeArray, dimArray, values):
+def constraints(dim, numNodes, nodeArray, dimArray, values, pressure = False):
     # Assembles two matracies:
     # returns:
     # constHas indecates which nodes have constraints
@@ -24,11 +24,6 @@ def constraints(dim, numNodes, nodeArray, dimArray, values):
     
     ### Test for incorrect dimensions
     exception = False 
-    
-    if len(nodeArray)!=len(dimArray):
-        print("ERROR: nodeArray is not same length as dimArray")
-        exception = True
-        return (np.zeros(1),np.zeros(1))
         
     if len(nodeArray)!=len(values):
         print("ERROR: nodeArray is not same length as values")
@@ -44,16 +39,22 @@ def constraints(dim, numNodes, nodeArray, dimArray, values):
     if not exception:    
         constHas = np.ones((dim,numNodes))*-1
         constVal = np.zeros((dim,numNodes))
-        constHas[np.asarray(dimArray),np.asarray(nodeArray)] = 0
-        constVal[np.asarray(dimArray),np.asarray(nodeArray)] = np.asarray(values) 
+        
+        if pressure:
+            constHas[:,np.asarray(nodeArray).astype(int)] = 0
+            constVal[:,np.asarray(nodeArray).astype(int)] = np.asarray(values)
+        else:
+            constHas[np.asarray(dimArray).astype(int),np.asarray(nodeArray).astype(int)] = 0
+            constVal[np.asarray(dimArray).astype(int),np.asarray(nodeArray).astype(int)] = np.asarray(values)
+
     #    print(constHas,"\n")
     #    print(constVal,"\n")
         return (constHas,constVal)
 #    
 if __name__ == "__main__":
-    dim = 2
+    dim = 3
     numNodes = 4
     nodeArray = np.array([0,1,1,2])
-    dimArray = np.array([1,2,0,0])
+    dimArray = np.array([1,2,-1,0])
     values = np.array([10,-3,5,6])
     (constHas,constVal) = constraints(dim, numNodes, nodeArray, dimArray, values)

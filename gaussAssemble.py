@@ -110,17 +110,17 @@ def gaussIntegrate(numEle,final,dimMem,func):
 
 
 
-#if __name__ == "__main__":
-#    memberCount = numCubeMembers(1)
-#    print(memberCount)
-#    (a,b,c,d) = parEleGPAssemble(3)
+if __name__ == "__main__":
+    memberCount = numCubeMembers(1)
+    print(memberCount)
+    (a,b,c,d) = parEleGPAssemble(3)
     
-#    numEle = [1,1,1]
-#    final = [1,1,1]
-#    func = lambda x: np.ones(len(x))
-#    #func = lambda x: x[:,0]**3
-#    #func = lambda x: np.prod(x,axis=1)
-#    dimMem = 3 # Dimension of member being integrated
-#    
-#    
-#    integral = gaussIntegrate(numEle,final,dimMem,func)
+    numEle = [1,1,1]
+    final = [1,1,1]
+    func = lambda x: np.ones(len(x))
+    #func = lambda x: x[:,0]**3
+    #func = lambda x: np.prod(x,axis=1)
+    dimMem = 3 # Dimension of member being integrated
+    
+    
+    integral = gaussIntegrate(numEle,final,dimMem,func)

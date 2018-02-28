@@ -33,15 +33,15 @@ def constitAssemble(E,v,dim):
     boB = 2*G+gams
     if dim == 1:
         constit = np.array([[E]])
-    if dim == 2:
-        constit = np.array([[1,v,0],[v,1,0],[0,0,1-v]])*E/(1-v**2)
+    elif dim == 2:
+        constit = np.array([[1,v,0],[v,1,0],[0,0,(1-v)/2]])*E/(1-v**2)
     elif dim == 3:
         constit = np.array([[boB,gams,gams,0,0,0],[gams,boB,gams,0,0,0],[gams,gams,boB,0,0,0],[0,0,0,G,0,0],[0,0,0,0,G,0],[0,0,0,0,0,G]])
     
     return(constit)
 #def dispToStrain(disp):
     
-def FintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp):
+def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp):
     
     Fint = np.zeros([len(nodeCoords[:,0]),dim])
     for i in range(np.prod(numEle)): #Iterate through each element
@@ -57,12 +57,10 @@ def FintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
             # Contruct Geometry at GP
             basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
             # Compute Current Strain
-            strain = 0
+            strain = [0]
             for k in range(len(basisSubset)): #iterate through each basis
                 Ba = bAssemble(basisdXArray[k,:])
                 strain = strain + np.matmul(Ba,tempDisp[k,:])
-
-            strain[strain<1e-16]=0 #Cheating, getting rid of really small pesky strains
 
             # Calculate Stress
             stress = np.matmul(constit,strain)
@@ -83,7 +81,7 @@ if __name__ == '__main__':
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
-    v = 0.3 #poisons ratio
+    v = 0 #poisons ratio
     
     #gaussPoints = [-1,1]
     (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
@@ -91,7 +89,7 @@ if __name__ == '__main__':
     
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
-    disp = np.ones([len(nodeCoords[:,0]),dim])*0
+    disp = np.zeros([len(nodeCoords[:,0]),dim])*0
     
 #    disp[[0,3],:] = 0
 #    disp[[2,5],:] = .1
@@ -99,8 +97,8 @@ if __name__ == '__main__':
     
     disp[0:9:3,:] = 0
 #    disp[1:9:3,:] = .05
-    disp[2:9:3,:] = .1
-    disp[:,1:] = 0
+    disp[2:9:3,0] = .1
+
     
 #    disp[[0,2,4,6],:] = 0
 #    disp[[1,3,5,7],:] = .12
@@ -109,5 +107,5 @@ if __name__ == '__main__':
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
     constit = constitAssemble(E,v,dim)
     
-    Fin = FintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp)
+    Fin = fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp)
     
