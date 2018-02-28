@@ -50,6 +50,7 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
         
         K[index,np.transpose(index)] += tempK
     return(K)
+    
 if __name__ == "__main__":
     # Parameters
     dim = 2
@@ -58,9 +59,9 @@ if __name__ == "__main__":
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
-    v = 0.3 #poisons ratio
+    v = 0.0 #poisons ratio
     eps = 10**-5
-    
+###############################################################################    
     # Assmble the constitutive matrix from strain to stress
     constit = fint.constitAssemble(E,v,dim)
     #Assemble gause point arrays
@@ -70,49 +71,34 @@ if __name__ == "__main__":
     #Assembe the mesh
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
-    K = kAssemble(dim,numEle,constit,gWArray,mCount,mSize, basisArray,nodeCoords,eleNodesArray)
+###############################################################################
     # Construct force field
-    numNodes = 2**dim*np.prod(numEle)
-#    nodeArray = np.array([1,3])
-#    dimArray = np.array([0,0])
-#    values = np.array([1,1])*10**8
-    nodeArray = np.array([0])
-    dimArray = np.array([0])
-    values = np.array([1])*10**10
-    (constHas,constVal) = load.constraints(dim, numNodes, nodeArray, dimArray, values)
+    forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+#    forceType[:,0] = 1
+    forceType[[1,3],4] = 3
+#    forceType[:,3] = 3
+    forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
     
+    Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
+    
+###############################################################################
+    #Apply constraints
     disp = np.zeros([len(nodeCoords[:,0]),dim])
     
     constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
-    constraintes[0:3,1] = 0
     constraintes[0:9:3,0] = 0
+    constraintes[0:3,1] = 0
 
-
-    
-#    disp[8,0] = .1
-#    constraintes[8,:] = 0
-    
-#    disp[2:9:3,0] = .1
-#    disp[6:9,1] = .1
-#    constraintes[2:9:3,0] = 0
-#    constraintes[6:9,1] = 0
-    
-    
     contrainte2D = constraintes.astype(bool)
-    constraintes = np.reshape(constraintes,len(nodeCoords[:,0])*dim,order = 'A').astype(bool)
-    mask = np.matlib.repmat(constraintes,len(constraintes),1)
-    mask = mask * np.transpose(mask)
+    constraintes = constraintes.flatten().astype(bool)    
+    mask = np.outer(constraintes,constraintes)
 
-    Fext = np.zeros(nodeCoords.shape)
-    Fext[6:9,1] = 10000
-    Fext[2:9:3,0] = 10000
-#    Fext[6:9,1] = 5000
-    
+
+###############################################################################
+    #Iterate
     iMax = 10
     nMax = 1
     
-    
-    temp = (np.reshape(K[mask],(int(len(K[constraintes,:])),-1)))
     n = 0 
     while n < nMax:
         n += 1
@@ -126,7 +112,7 @@ if __name__ == "__main__":
         while i < iMax:
             Fint = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,ui)
 #            print(Fext - Fint)
-            Ri = np.reshape(Fext - Fint,len(constraintes))[constraintes]
+            Ri = (Fext - Fint)[contrainte2D]
             
             if np.linalg.norm(Ri) < eps:
                 print(i,'solved','Ri =',np.linalg.norm(Ri))
@@ -136,8 +122,8 @@ if __name__ == "__main__":
                 print('Ri =',np.linalg.norm(Ri))
 #                print(i)
                 K = kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray)
-#                print(np.reshape(K[mask],(int(len(K[constraintes,:])),-1)),'\n')
-                deltU = np.linalg.solve(np.reshape(K[mask],(int(len(K[constraintes,:])),-1)),Ri)
+
+                deltU = np.linalg.solve(K[:,constraintes][constraintes,:],Ri)
 #                print(i,deltU)
                 ui[contrainte2D] = ui[contrainte2D] + deltU
 #                print('ui =',ui[contrainte2D])

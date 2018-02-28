@@ -194,7 +194,73 @@ class test_constraints(unittest.TestCase):
         basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
         basisSubset = geas.basisSubsetGaussPoint(0,0,dim,basisArray,mCount,mSize)
         self.assertEqual(basisSubset.tolist(), [[0.7886751345948128655,	-0.5],[0.211324865405187079,	0.5]])
+        
         basisSubset = geas.basisSubsetGaussPoint(0,1,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.21132486540518708, -0.5],[0.7886751345948129, 0.5]])
+        
+        dim = 2
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        basisSubset = geas.basisSubsetGaussPoint(0,0,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.6220084679281462, -0.39433756729740643, -0.39433756729740643],
+                         [0.16666666666666663, 0.39433756729740643, -0.10566243270259354],
+                         [0.16666666666666663, -0.10566243270259354, 0.39433756729740643],
+                         [0.044658198738520435, 0.10566243270259354, 0.10566243270259354]])
+        basisSubset = geas.basisSubsetGaussPoint(0,1,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.16666666666666663, -0.39433756729740643, -0.10566243270259354],
+                         [0.6220084679281462, 0.39433756729740643, -0.39433756729740643],
+                         [0.044658198738520435, -0.10566243270259354, 0.10566243270259354],
+                         [0.16666666666666663, 0.10566243270259354, 0.39433756729740643]])
+        basisSubset = geas.basisSubsetGaussPoint(2,0,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.0, -0.0, -0.39433756729740643],
+                         [0.0, 0.0, -0.10566243270259354],
+                         [0.7886751345948129, -0.5, 0.39433756729740643],
+                         [0.21132486540518708, 0.5, 0.10566243270259354]])
+        basisSubset = geas.basisSubsetGaussPoint(2,1,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.0, -0.0, -0.10566243270259354],
+                         [0.0, 0.0, -0.39433756729740643],
+                         [0.21132486540518708, -0.5, 0.10566243270259354],
+                         [0.7886751345948129, 0.5, 0.39433756729740643]])
+    
+    def test_gaussJacobian(self):
+        dim = 1
+        numBasis = 2
+        numEle = [1]*dim
+        eleSize = [1]*dim
+        gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(0,0,0,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.5)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(0,0,1,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.5)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+        
+        dim = 2
+        numBasis = 2
+        numEle = [1]*dim
+        eleSize = [1]*dim
+        gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(0,0,0,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.25)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.0]])
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(0,0,1,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.25)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.0]])
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(0,0,3,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.25)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.0]])
+        
+        (intScalFact,hardCodedJac) = geas.gaussJacobian(1,0,0,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+        self.assertEqual(intScalFact,0.5)
+        self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.0]])
+
         a = 1
 if __name__ == '__main__':
     unittest.main()

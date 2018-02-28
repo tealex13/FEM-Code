@@ -14,74 +14,65 @@ import basisAssemble as bas
 import geometryAssemble as geas
 import fintAssemble as fint
 
-def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,tractVal,pressVal,bodyVal):
+def forceSorter(dim,forces,forceType,typeEvaluted):
+    '''
+    typeEvaluated:
+        1 = body force
+        2 = pressure
+        3 = traction force
+        
+    OUTPUT:
+        outForce- The forces in each dimension of each node.
+    '''
+    outForce = np.zeros(forces.shape)
+    mask = np.repeat(forceType,dim,axis=1)==typeEvaluted
+    outForce[mask] = forces[mask]
+    return(outForce)
+
+def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType):
+    bodyForce = forceSorter(dim,forces,forceType,1)
+    pressForce = forceSorter(dim,forces,forceType,2)
+    tractForce = forceSorter(dim,forces,forceType,3)
+    
     Fext = np.zeros([len(nodeCoords[:,0]),dim])
     for i in range(np.prod(numEle)): #Iterate through each element
 #        print('\n')
         tempNodes = eleNodesArray[:,i]
-        tempTractVal = np.transpose(tractVal[:,tempNodes])
-        tempPressVal = np.transpose(pressVal[:,tempNodes])
-        tempBodyVal = np.transpose(bodyVal[:,tempNodes])
         
-#        print(tempTractVal)
-        print(i)
-        
-        for S in range(mCount[-dim]+mCount[-dim+1]): # iterate through each side. This will not work for 1 dimensional
+        if dim == 1:
+            Srange = 1
+        else:
+            Srange = np.sum(mCount[:3])
+        fa = np.zeros([len(tempNodes),dim])    
+        for S in range(Srange): # iterate through each side
             # Get the nodes from side
-#            tempNodes = eleNodesArray[mas.sNodes(S,dim),i]
+
             memDim = geas.memDim(S,dim,mCount)
+            startingGW = np.sum(mSize[-(memDim+1)])+(S-np.sum(mCount[-(memDim+1)]))*mSize[-memDim]
             
-            startingGW = np.sum(mSize[-(memDim+1)])+(S-np.sum(mCount[-(memDim+1)]))*mSize[-memDim] 
             
-            Fa = np.zeros(tempTractVal.shape)
+            
             for j in range(mSize[-memDim]): #Iterate through each gauss point
                                
                 # Construct basis at GP
                 (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
-                if S > 0:
-                    tempNormal = geas.stupidNormals(S,hardCodedJac,dim)
-                basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
-                # Contruct Geometry at GP
                 basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
-#                print(basisSubset,'\n')
-                
-                
                 if S == 0:
-                    for k in range(len(tempBodyVal[0,:])):
-                        a = 1
-#                        Fa[:,k] += basisSubset*tempBodyVal[:,k]*intScalFact*gWArray[startingGW+j]
-                elif S > 0:
-                    for k in range(dim):
-                        Fa[:,k] += basisSubset*tempTractVal[:,k]*intScalFact*gWArray[startingGW+j]
-                        Fa[:,k] += basisSubset*tempPressVal[:,k]*tempNormal[k]*intScalFact*gWArray[startingGW+j]
-#                        print(Fa,'\n')
-                    
-#                    Fa = np.matmul(basisSubset,
+                    fa += np.outer(basisSubset,bodyForce[i,:dim])*intScalFact*gWArray[startingGW+j]
+#                    print(fa)
                 
-#                basisSubset = basisSubset[mas.sNodes(S,dim)]
-                # Compute Current Strain
-#                for k in range(len(basisSubset)): #Iterate through basis
-##                    print(i,S,j,k,'\t',len(basisSubset))
-#                    
-#                    if S == 0: #Body force
-#                        a = 1 
-#                        Fa[k,:] = basisSubset[k]*tempBodyVal[:,k]*intScalFact*gWArray[startingGW+j]+Fa[k,:]
-#
-#                    elif S > 0: #traction Force
-##                        print('\n basis',k)
-#                        for l in range(dim): #Iterate through dimensions
-##                            print(tempTractVal[l,k])
-#                            if tempHasForce[l,k] == 1: #pressure
-#                                
-#                                Fa[k,l] = basisSubset[k]*tempTractVal[l,k]*tempNormals[l]*intScalFact*gWArray[startingGW+j]+Fa[k,l]
-#                            elif tempHasForce[l,k] == 0: #Direct Loads
-#                                Fa[k,l] = basisSubset[k]*tempTractVal[l,k]*intScalFact*gWArray[startingGW+j]+Fa[k,l]
-##                                print(l,k)
-                                    
-                                
-                                
-            Fext[tempNodes,:] += Fa
+                if S > 0:
+                    # Pressure
+                    tempNormal = geas.stupidNormals(S,hardCodedJac,dim)
+#                    print(tempNormal[:dim],'\n',np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)]),'\n')
+                    tempNormal = np.matlib.repmat(tempNormal[:dim],len(basisSubset),1)
+                    fa += np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)])*tempNormal*intScalFact*gWArray[startingGW+j]
+                    # Traction
+                    fa += np.outer(basisSubset,tractForce[i,dim*S:dim*(S+1)])*intScalFact*gWArray[startingGW+j]
+                
+        Fext[tempNodes,:] += fa
     return(Fext)
+
 
 
 if __name__ == '__main__':
@@ -96,25 +87,13 @@ if __name__ == '__main__':
     basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize)
     
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
-
-    # Construct force field
-    numNodes = 2**dim*np.prod(numEle)
-#    nodeArray = np.array([1,3])
-#    dimArray = np.array([0,0])
-#    values = np.array([1,1])*10**8
-    tractNodeArray = np.array([1,2])
-    tractDimArray = np.array([0,1])
-    tractValues = np.array([1,1])*10**8
-    (tractHas,tractVal) = load.constraints(dim, numNodes, tractNodeArray, tractDimArray, tractValues)
     
-    pressNodeArray = [4,5]
-    pressDimArray = []
-    pressValues = np.array([1,2])*10**8
-    (pressHas,pressVal) = load.constraints(dim, numNodes, pressNodeArray, pressDimArray, pressValues, pressure = True)
+    forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+#    forceType[:,0] = 1
+    forceType[[1,3],4] = 3
+#    forceType[:,3] = 3
+    forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
     
-    tractVal = np.zeros(pressVal.shape)
-    bodyVal = np.zeros(pressVal.shape)
-    
-    Fext = fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,tractVal,pressVal,bodyVal)
+    Fext = fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
     
    

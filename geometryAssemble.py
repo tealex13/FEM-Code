@@ -141,9 +141,9 @@ def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,nodeCoords,eleNod
     hardCodedJac = np.zeros([3,3])
     for i in range(dim): #step through each parent dimension
         
-        intScalFact[:,i] = np.sum(basisSelect(S,gaussPoint,dim,basisArray,mCount,mSize,i+1).reshape(len(eleNodesArray[:,ele]),1)*
-                nodeCoords[eleNodesArray[:,ele],:],0)
-#        hardCodedJac[:,i]
+        intScalFact[:,i] = np.matmul(basisSelect(S,gaussPoint,dim,basisArray,mCount,mSize,i+1),
+                nodeCoords[eleNodesArray[:,ele],:])
+#        print(intScalFact[:,i])
     hardCodedJac[:dim,:dim] = intScalFact
     intScalFact = intScalFact[detArray[S,:].astype(bool),:]
     intScalFact = LA.det(intScalFact[:,detArray[S,:].astype(bool)])
@@ -168,18 +168,19 @@ def stupidNormals(S,hardCodedJac,dim):
         if S == 0:
             normal = []
             print('error: no normals for S = 0')
-        elif S == 1:
-            temp = np.cross(np.array([0,0,1]),hardCodedJac[:,1])
-            normal = 1/LA.norm(temp)*temp
         elif S == 2:
-            temp = np.cross(hardCodedJac[:,1],np.array([0,0,1]))
-            normal = 1/LA.norm(temp)*temp
-        elif S == 3:
             temp = np.cross(hardCodedJac[:,0],np.array([0,0,1]))
             normal = 1/LA.norm(temp)*temp
-        elif S == 4:
+        elif S == 1:
             temp = np.cross(np.array([0,0,1]),hardCodedJac[:,0])
             normal = 1/LA.norm(temp)*temp
+        elif S == 4:
+            temp = np.cross(np.array([0,0,1]),hardCodedJac[:,1])
+            normal = 1/LA.norm(temp)*temp
+        elif S == 3:
+            temp = np.cross(hardCodedJac[:,1],np.array([0,0,1]))
+            normal = 1/LA.norm(temp)*temp
+        
         else:
             normal = []
             print('error: S outside of range')
@@ -187,22 +188,22 @@ def stupidNormals(S,hardCodedJac,dim):
         if S == 0:
             normal = []
             print('error: no normals for S = 0')
-        elif S == 1:
+        elif S == 6:
             temp = np.cross(hardCodedJac[:,2],hardCodedJac[:,1])
             normal = 1/LA.norm(temp)*temp
-        elif S == 2:
+        elif S == 5:
             temp = np.cross(hardCodedJac[:,1],hardCodedJac[:,2])
             normal = 1/LA.norm(temp)*temp
-        elif S == 3:
+        elif S == 4:
             temp = np.cross(hardCodedJac[:,0],hardCodedJac[:,2])
             normal = 1/LA.norm(temp)*temp
-        elif S == 4:
+        elif S == 3:
             temp = np.cross(hardCodedJac[:,2],hardCodedJac[:,0])
             normal = 1/LA.norm(temp)*temp
-        elif S == 5:
+        elif S == 2:
             temp = np.cross(hardCodedJac[:,1],hardCodedJac[:,0])
             normal = 1/LA.norm(temp)*temp
-        elif S == 6:
+        elif S == 1:
             temp = np.cross(hardCodedJac[:,0],hardCodedJac[:,1])
             normal = 1/LA.norm(temp)*temp
         else:
@@ -224,8 +225,8 @@ def basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac):
 if __name__ == '__main__':
     
     dim = 2
-    numEle = [1]*dim
-    eleSize = [1]*dim
+    numEle = [2]*dim
+    eleSize = [2]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     #gaussPoints = [-1,1]
@@ -236,7 +237,7 @@ if __name__ == '__main__':
     
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
     
-    ele = 0
+    ele = 1
     for i in range(np.sum(mCount)): #iterate through S
         sDim = memDim(i,dim,mCount)
         for j in range(mSize[-sDim]):
@@ -249,10 +250,10 @@ if __name__ == '__main__':
 #    temp = stupidNormals(S,hardCodedJac,dim)
 #    print(temp)
     #basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
-    #print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))
-    #for i in range(0,8):
-    #    (intScalFact,hardCodedJac) = gaussJacobian(i,ele,gaussPoints[0],dim,basisArray,mCount,mSize,detArray,nodeCoords,eleNodesArray)
-    #    print(intScalFact)
-    #
-    #    normal = stupidNormals(i,hardCodedJac,dim)
-    #    print(normal)
+#    print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))
+    for i in range(2):
+        (intScalFact,hardCodedJac) = gaussJacobian(i,ele,0,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
+#        print(hardCodedJac,'\n')
+    
+#        normal = stupidNormals(i,hardCodedJac,dim)
+#        print(normal)
