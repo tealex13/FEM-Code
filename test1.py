@@ -162,8 +162,40 @@ class test_constraints(unittest.TestCase):
         self.assertEqual(geas.memDim(6,3,[0,1,6,12]),2)
         self.assertEqual(geas.memDim(7,3,[0,1,6,12]),1)
         self.assertEqual(geas.memDim(18,3,[0,1,6,12]),1)
+    
+    def test_basisSubsetAssemble(self):
+        dim = 1
+        numBasis = 2
+        gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        basisSubsetGP = geas.basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
+        self.assertEqual(basisSubsetGP.tolist(),[[0.7886751345948129, 0.21132486540518708], [0.21132486540518708, 0.7886751345948129]])
         
-
+        dim = 2
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        basisSubsetGP = geas.basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
+        self.assertEqual(basisSubsetGP.tolist(),[[0.6220084679281462,0.16666666666666663,0.16666666666666663,0.044658198738520435],
+                         [0.16666666666666663,0.6220084679281462,0.044658198738520435,0.16666666666666663],
+                         [0.16666666666666663,0.044658198738520435,0.6220084679281462,0.16666666666666663],
+                         [0.044658198738520435,0.16666666666666663,0.16666666666666663,0.6220084679281462]])
+        basisSubsetGP = geas.basisSubsetAssemble(2,dim,basisArray,mCount,mSize,divDim = 0)
+        self.assertEqual(basisSubsetGP.tolist(),[[0.21132486540518708, 0.0],
+                         [0.7886751345948129, 0.0],
+                         [0.0, 0.7886751345948129],
+                         [0.0, 0.21132486540518708]])
+    
+    def test_basisSubsetGaussPoint(self):
+        dim = 1
+        numBasis = 2
+        gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints,[1,1])
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray,mCount, mSize)
+        basisSubset = geas.basisSubsetGaussPoint(0,0,dim,basisArray,mCount,mSize)
+        self.assertEqual(basisSubset.tolist(), [[0.7886751345948128655,	-0.5],[0.211324865405187079,	0.5]])
+        basisSubset = geas.basisSubsetGaussPoint(0,1,dim,basisArray,mCount,mSize)
+        a = 1
 if __name__ == '__main__':
     unittest.main()
 #    
