@@ -261,6 +261,9 @@ class test_constraints(unittest.TestCase):
         self.assertEqual(intScalFact,0.5)
         self.assertEqual(hardCodedJac.tolist(),[[0.5, 0.0, 0.0], [0.0, 0.5, 0.0], [0.0, 0.0, 0.0]])
 
+###############################################################################
+        #NewtonRaphson
+        
         a = 1
 if __name__ == '__main__':
     unittest.main()

@@ -244,16 +244,6 @@ if __name__ == '__main__':
             basisSubsetGaussPoint(i,j,dim,basisArray,mCount,mSize)
     
     
-    
-#    (intScalFact,hardCodedJac) = gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
-#    temp = basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac)
-#    temp = stupidNormals(S,hardCodedJac,dim)
-#    print(temp)
-    #basisSubset = basisSubsetAssemble(0,dim,basisArray,mCount,mSize,divDim = 0)
-#    print(gausstoX(basisSubset,ele,eleNodesArray,nodeCoords))
+
     for i in range(2):
         (intScalFact,hardCodedJac) = gaussJacobian(i,ele,0,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
-#        print(hardCodedJac,'\n')
-    
-#        normal = stupidNormals(i,hardCodedJac,dim)
-#        print(normal)

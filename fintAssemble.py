@@ -91,20 +91,10 @@ if __name__ == '__main__':
     
     disp = np.zeros([len(nodeCoords[:,0]),dim])*0
     
-#    disp[[0,3],:] = 0
-#    disp[[2,5],:] = .1
-#    disp[:,1:] = 0
-    
     disp[0:9:3,:] = 0
 #    disp[1:9:3,:] = .05
     disp[2:9:3,0] = .1
 
-    
-#    disp[[0,2,4,6],:] = 0
-#    disp[[1,3,5,7],:] = .12
-#    disp[:,1:] = 0
-    
-    #print(CtoX([0,0],eleNodesArray,nodeCoords))
     constit = constitAssemble(E,v,dim)
     
     Fin = fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp)

@@ -59,7 +59,7 @@ if __name__ == "__main__":
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
-    v = 0.0 #poisons ratio
+    v = 0.3 #poisons ratio
     eps = 10**-5
 ###############################################################################    
     # Assmble the constitutive matrix from strain to stress
@@ -75,8 +75,9 @@ if __name__ == "__main__":
     # Construct force field
     forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
 #    forceType[:,0] = 1
-    forceType[[1,3],4] = 3
-#    forceType[:,3] = 3
+    forceType[[1,3],4] = 2
+    forceType[[2,3],2] = 2
+    forceType[3,4] = 3
     forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
     
     Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
@@ -86,8 +87,8 @@ if __name__ == "__main__":
     disp = np.zeros([len(nodeCoords[:,0]),dim])
     
     constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
-    constraintes[0:9:3,0] = 0
-    constraintes[0:3,1] = 0
+    constraintes[0:9:3,:] = 0
+#    constraintes[0:3,1] = 0
 
     contrainte2D = constraintes.astype(bool)
     constraintes = constraintes.flatten().astype(bool)    
@@ -128,8 +129,6 @@ if __name__ == "__main__":
                 ui[contrainte2D] = ui[contrainte2D] + deltU
 #                print('ui =',ui[contrainte2D])
                 i += 1
-#        
-#    
-#    
+
     
    
