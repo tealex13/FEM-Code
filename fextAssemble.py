@@ -69,6 +69,7 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
                     fa += np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)])*tempNormal*intScalFact*gWArray[startingGW+j]
                     # Traction
                     fa += np.outer(basisSubset,tractForce[i,dim*S:dim*(S+1)])*intScalFact*gWArray[startingGW+j]
+                    print(fa,'\n')
                 
         Fext[tempNodes,:] += fa
     return(Fext)
@@ -77,7 +78,7 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
 
 if __name__ == '__main__':
     dim = 2
-    numEle = [2]*dim
+    numEle = [1]*dim
     eleSize = [2]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
@@ -88,9 +89,14 @@ if __name__ == '__main__':
     
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
+#    r = (nodeCoords[:,1]+1)
+#    theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
+#    nodeCoords[:,0] =  r*np.sin(theta)
+#    nodeCoords[:,1] =  r*np.cos(theta)
+    
     forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
 #    forceType[:,0] = 1
-    forceType[[1,3],4] = 3
+    forceType[[0],1] = 3
 #    forceType[:,3] = 3
     forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
     

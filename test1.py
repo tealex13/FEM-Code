@@ -12,6 +12,7 @@ import meshAssemble as mas
 import gaussAssemble as gas
 import basisAssemble as bas
 import geometryAssemble as geas
+import NewtonRaphson as nr
 
 class test_constraints(unittest.TestCase):
 
@@ -263,6 +264,39 @@ class test_constraints(unittest.TestCase):
 
 ###############################################################################
         #NewtonRaphson
+    def test_newtonRaph(self):
+        dim = 2
+        numEle = [2]*dim
+        eleSize = [1]*dim
+        numBasis = 2
+        gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+        E = 1#modulus
+        v = 0.0 #poisons ratio
+
+        constit = nr.fint.constitAssemble(E,v,dim)
+        (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
+        basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize) 
+        (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+        forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+        forceType[[1,3],4] = 3
+        forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
+        forces[[1,3],4*dim+0]=.5
+        disp = np.zeros([len(nodeCoords[:,0]),dim])      
+        constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
+        constraintes[0:9:3,:] = 0
+    
+        ui = nr.newtonRaph(dim,numEle,constit,gPArray,gWArray, 
+                   mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
+        self.assertEqual(ui.tolist(),
+                               [[  0.00000000e+00,   0.00000000e+00],
+                               [  2.5000000000000006e-01,  -2.0816681711721685e-17],
+                               [  5.00000000e-01,  -4.097430972836398e-17],
+                               [  0.00000000e+00,   0.00000000e+00],
+                               [  2.500000000000001e-01,  -2.270991192460361e-17],
+                               [  5.000000000000001e-01,  -5.972088998909374e-17],
+                               [  0.00000000e+00,   0.00000000e+00],
+                               [  2.5000000000000006e-01,  -2.0809619091596192e-17],
+                               [  5.000000000000001e-01,  -5.205264538381372e-17]])
         
         a = 1
 if __name__ == '__main__':

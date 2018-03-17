@@ -50,52 +50,15 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
         
         K[index,np.transpose(index)] += tempK
     return(K)
-    
-if __name__ == "__main__":
-    # Parameters
-    dim = 2
-    numEle = [2]*dim
-    eleSize = [2]*dim
-    numBasis = 2
-    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
-    E = 200*10**9 #modulus
-    v = 0.3 #poisons ratio
+
+def newtonRaph(dim,numEle,constit,gPArray,gWArray, 
+               mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes):
     eps = 10**-5
-###############################################################################    
-    # Assmble the constitutive matrix from strain to stress
-    constit = fint.constitAssemble(E,v,dim)
-    #Assemble gause point arrays
-    (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
-    #Assemble the basis Array
-    basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize) 
-    #Assembe the mesh
-    (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
-    
-###############################################################################
-    # Construct force field
-    forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
-#    forceType[:,0] = 1
-    forceType[[1,3],4] = 2
-    forceType[[2,3],2] = 2
-    forceType[3,4] = 3
-    forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
-    
     Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
     
-###############################################################################
-    #Apply constraints
-    disp = np.zeros([len(nodeCoords[:,0]),dim])
-    
-    constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
-    constraintes[0:9:3,:] = 0
-#    constraintes[0:3,1] = 0
-
     contrainte2D = constraintes.astype(bool)
-    constraintes = constraintes.flatten().astype(bool)    
-    mask = np.outer(constraintes,constraintes)
-
-
-###############################################################################
+    constraintes = constraintes.flatten().astype(bool) 
+    
     #Iterate
     iMax = 10
     nMax = 1
@@ -105,8 +68,8 @@ if __name__ == "__main__":
         n += 1
 #        Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constHas,constVal)
         
-        Fint = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp)
-        R0 = Fext - Fint
+        R0 = np.linalg.norm(Fext)
+        print(R0)
     
         i = 0
         ui = disp
@@ -115,7 +78,7 @@ if __name__ == "__main__":
 #            print(Fext - Fint)
             Ri = (Fext - Fint)[contrainte2D]
             
-            if np.linalg.norm(Ri) < eps:
+            if np.linalg.norm(Ri) < eps*R0:
                 print(i,'solved','Ri =',np.linalg.norm(Ri))
 
                 break
@@ -129,6 +92,69 @@ if __name__ == "__main__":
                 ui[contrainte2D] = ui[contrainte2D] + deltU
 #                print('ui =',ui[contrainte2D])
                 i += 1
+    return(ui)
 
+ 
+if __name__ == "__main__":
+    # Parameters
+    dim = 2
+    numEle = [1]*dim
+    eleSize = [2]*dim
+    numBasis = 2
+    gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
+    E = 200*10**9 #modulus
+    E = 1#modulus
+    v = 0.0 #poisons ratio
+    
+###############################################################################    
+    # Assmble the constitutive matrix from strain to stress
+    constit = fint.constitAssemble(E,v,dim)
+    #Assemble gause point arrays
+    (gPArray,gWArray, mCount, mSize) = gas.parEleGPAssemble(dim,gaussPoints =gaussPoints)
+    #Assemble the basis Array
+    basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize) 
+    #Assembe the mesh
+    (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+    
+#    r = (nodeCoords[:,1]+1)
+#    theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
+#    nodeCoords[:,0] =  r*np.sin(theta)
+#    nodeCoords[:,1] =  r*np.cos(theta)
+    nodeCoords[:,1] = nodeCoords[:,1]+1
+       
+###############################################################################
+    # Construct force field
+    forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+    forceType[0:numEle[0],1] = 3
+
+#    forceType[[1,3,5,7],6] = 3
+#    forceType[[2,3],2] = 2
+#    forceType[2,2] = 3
+    forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
+#    forces[0:numEle[0],1*dim+1]=.5
+    forces[0:numEle[0],1*dim+0]=.5
+    
+    
+    Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
+if False:
+###############################################################################
+    #Apply constraints
+    disp = np.zeros([len(nodeCoords[:,0]),dim])
+    
+    constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
+    constraintes[0:(numEle[0]+1)**2:numEle[0]+1,0] = 0
+    constraintes[numEle[0]:(numEle[0]+1)**2:numEle[0]+1,1] = 0
+#    constraintes[0:27:3,0] = 0
+#    constraintes[0:3,1] = 0
+#    constraintes[9:12,1] = 0
+#    constraintes[18:21,1] = 0
+#    constraintes[0:9,2] = 0
+
+###############################################################################
+
+    ui = newtonRaph(dim,numEle,constit,gPArray,gWArray, 
+               mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
+    mas.plotFigure(1,nodeCoords)
+    mas.plotFigure(1,nodeCoords+ui)
     
    

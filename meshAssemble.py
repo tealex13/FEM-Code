@@ -173,25 +173,36 @@ def sNodes(S,dim):
             return(temp[S-1,:])
         else:
             print('Error in sNodes')
+            
+def plotFigure(figNum, nodeCoords):
     
+    fig = plt.figure(figNum)
+    if fig.axes:
+        ax = fig.axes[0]
+    else:      
+        if len(nodeCoords[0,:]) == 3:
+            ax = Axes3D(fig)
+        else:
+            ax = fig.add_subplot(111)
+             
+    if len(nodeCoords[0,:]) == 3:
+        ax.scatter(nodeCoords[:,0], nodeCoords[:,1], nodeCoords[:,2],cmap='Greens')  
+    elif len(nodeCoords[0,:]) == 2:
+        ax.scatter(nodeCoords[:,0], nodeCoords[:,1],cmap='Greens')
+    elif len(nodeCoords[0,:]) == 1:
+        ax.scatter(nodeCoords[:,0], np.zeros(len(nodeCoords[:,0])),cmap='Greens')
+    plt.show()
+        
+        
 if __name__ == "__main__":
-    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([1,2,3],[1,2,3])
-    fig = plt.figure(1)
-    ax = Axes3D(fig)
-    ax.scatter(nodeCoords[:,0], nodeCoords[:,1], nodeCoords[:,2],cmap='Greens')
-    plt.show()
     
-    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([2,2],[2,2])
-    fig2 = plt.figure(2)
-    ax2 = fig2.add_subplot(111)
-    ax2.scatter(nodeCoords[:,0], nodeCoords[:,1],cmap='Greens')
-    plt.show()
 
+    (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([2,2],[2,2])
+    plotFigure(1, nodeCoords)
+    plotFigure(1, nodeCoords+.1)
+    
     (nodeCoords,eleNodesArray,edgeNodesArray) = meshAssemble([9],[3])
-    fig3 = plt.figure(3)
-    ax3 = fig3.add_subplot(111)
-    ax3.scatter(nodeCoords[:,0],np.zeros(len(nodeCoords[:,0])),cmap='Greens')
-    plt.show()
+    plotFigure(2, nodeCoords)
 
 #    y = lambda x: 1
 #    n = lambda x: 2
