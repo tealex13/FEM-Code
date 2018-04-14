@@ -21,6 +21,8 @@ def forceSorter(dim,forces,forceType,typeEvaluted):
         2 = pressure
         3 = traction force
         
+        For pressure only it only looks at the value in the x place
+        
     OUTPUT:
         outForce- The forces in each dimension of each node.
     '''
@@ -57,6 +59,7 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
                 # Construct basis at GP
                 (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
                 basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
+#                print("Gauss Point", j, "\n", basisSubset, "\n")
                 if S == 0:
                     fa += np.outer(basisSubset,bodyForce[i,:dim])*intScalFact*gWArray[startingGW+j]
 #                    print(fa)
@@ -65,11 +68,13 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
                     # Pressure
                     tempNormal = geas.stupidNormals(S,hardCodedJac,dim)
 #                    print(tempNormal[:dim],'\n',np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)]),'\n')
-                    tempNormal = np.matlib.repmat(tempNormal[:dim],len(basisSubset),1)
-                    fa += np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)])*tempNormal*intScalFact*gWArray[startingGW+j]
+#                    tempNormal = np.matlib.repmat(tempNormal[:dim],len(basisSubset),1)
+#                    fa += np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)])*tempNormal*intScalFact*gWArray[startingGW+j]
+                    fa += np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j]
                     # Traction
                     fa += np.outer(basisSubset,tractForce[i,dim*S:dim*(S+1)])*intScalFact*gWArray[startingGW+j]
-                    print(fa,'\n')
+#                    print(hardCodedJac,'\n')
+#                    print(np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j],'\n')
                 
         Fext[tempNodes,:] += fa
     return(Fext)
@@ -79,7 +84,7 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
 if __name__ == '__main__':
     dim = 2
     numEle = [1]*dim
-    eleSize = [2]*dim
+    eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     
@@ -89,16 +94,18 @@ if __name__ == '__main__':
     
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
-#    r = (nodeCoords[:,1]+1)
-#    theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
-#    nodeCoords[:,0] =  r*np.sin(theta)
-#    nodeCoords[:,1] =  r*np.cos(theta)
+    r = (nodeCoords[:,1]+1)
+    theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
+    nodeCoords[:,0] =  r*np.sin(theta)
+    nodeCoords[:,1] =  r*np.cos(theta)
     
+    side = 1
     forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
-#    forceType[:,0] = 1
-    forceType[[0],1] = 3
-#    forceType[:,3] = 3
-    forces = np.ones([np.prod(numEle),np.sum(mCount)*dim])
+    forceType[0:numEle[0],side] = 2
+
+    forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
+    forces[0:numEle[0],side*dim+0]=1
+    
     
     Fext = fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
     

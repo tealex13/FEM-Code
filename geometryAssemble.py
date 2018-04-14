@@ -145,8 +145,16 @@ def gaussJacobian(S,ele,gaussPoint,dim,basisArray,mCount,mSize,nodeCoords,eleNod
                 nodeCoords[eleNodesArray[:,ele],:])
 #        print(intScalFact[:,i])
     hardCodedJac[:dim,:dim] = intScalFact
-    intScalFact = intScalFact[detArray[S,:].astype(bool),:]
-    intScalFact = LA.det(intScalFact[:,detArray[S,:].astype(bool)])
+#    intScalFact = intScalFact[detArray[S,:].astype(bool),:]
+#    print(intScalFact[:,detArray[S,:].astype(bool)][detArray[S,:].astype(bool),:],'\n')
+#    print(hardCodedJac,'\n')
+    
+    # This Hard Codes scaling factor to only work for 2 dimensionals
+    if S == 0:
+        intScalFact = LA.det(intScalFact[:,detArray[S,:].astype(bool)][detArray[S,:].astype(bool),:])
+    else:
+        intScalFact = LA.norm(intScalFact[:,detArray[S,:].astype(bool)])
+            
     return (intScalFact,hardCodedJac)
         
         

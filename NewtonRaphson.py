@@ -6,6 +6,7 @@ Created on Fri Feb 23 15:59:18 2018
 """
 
 import numpy as np
+import matplotlib as plt
 import meshAssemble as mas
 import gaussAssemble as gas
 import basisAssemble as bas
@@ -96,10 +97,15 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
 
  
 if __name__ == "__main__":
+    #setup
+    plt.pyplot.close('all')
+    case = 'pressure'
+#    case = 'patch'
+    
     # Parameters
     dim = 2
-    numEle = [1]*dim
-    eleSize = [2]*dim
+    numEle = [2]*dim
+    eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
@@ -115,40 +121,41 @@ if __name__ == "__main__":
     basisArray = bas.basisArrayAssemble(dim,numBasis,gaussPoints,gPArray, mCount, mSize) 
     #Assembe the mesh
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
+ 
     
-#    r = (nodeCoords[:,1]+1)
-#    theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
-#    nodeCoords[:,0] =  r*np.sin(theta)
-#    nodeCoords[:,1] =  r*np.cos(theta)
-    nodeCoords[:,1] = nodeCoords[:,1]+1
-       
-###############################################################################
-    # Construct force field
-    forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
-    forceType[0:numEle[0],1] = 3
+#### Pressure Vessel
+    if case ==  'pressure':
+        r = (nodeCoords[:,1]+1)
+        theta = np.pi/2*(nodeCoords[:,0]/np.max(nodeCoords[:,0]))
+        nodeCoords[:,0] =  r*np.sin(theta)
+        nodeCoords[:,1] =  r*np.cos(theta)
+        # Construct force field
+        side = 1
+        forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+        forceType[0:numEle[0],side] = 2
+        forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
+        forces[0:numEle[0],side*dim+0]=.1
+        #Apply constraints
+        disp = np.zeros([len(nodeCoords[:,0]),dim])
+        
+        constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
+        constraintes[0:(numEle[0]+1)**2:numEle[0]+1,0] = 0 #mesh must be square
+        constraintes[numEle[0]:(numEle[0]+1)**2:numEle[0]+1,1] = 0 #mesh must be square
+        
+    elif case == 'patch':
+        # Construct foce field
+        side = 2
+        forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
+        forceType[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side] = 2 #dim must equal 2
+        forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
+        forces[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side*dim+0]=.1
+        disp = np.zeros([len(nodeCoords[:,0]),dim])
+        constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
+        constraintes[0:numEle[0]+1,1] = 0
+        constraintes[0:np.prod(numEle)+1:numEle[0],0] = 0
+    
 
-#    forceType[[1,3,5,7],6] = 3
-#    forceType[[2,3],2] = 2
-#    forceType[2,2] = 3
-    forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
-#    forces[0:numEle[0],1*dim+1]=.5
-    forces[0:numEle[0],1*dim+0]=.5
-    
-    
-    Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
-if False:
-###############################################################################
-    #Apply constraints
-    disp = np.zeros([len(nodeCoords[:,0]),dim])
-    
-    constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
-    constraintes[0:(numEle[0]+1)**2:numEle[0]+1,0] = 0
-    constraintes[numEle[0]:(numEle[0]+1)**2:numEle[0]+1,1] = 0
-#    constraintes[0:27:3,0] = 0
-#    constraintes[0:3,1] = 0
-#    constraintes[9:12,1] = 0
-#    constraintes[18:21,1] = 0
-#    constraintes[0:9,2] = 0
+#### 
 
 ###############################################################################
 
