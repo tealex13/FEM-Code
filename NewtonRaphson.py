@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     # Parameters
     dim = 2
-    numEle = [2]*dim
+    numEle = [5]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
@@ -143,7 +143,8 @@ if __name__ == "__main__":
         constraintes[numEle[0]:(numEle[0]+1)**2:numEle[0]+1,1] = 0 #mesh must be square
         
     elif case == 'patch':
-        # Construct foce field
+        nodeCoords[:,1] = nodeCoords[:,1]*((1-nodeCoords[:,0])*.4+1)
+        # Construct force field
         side = 2
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
         forceType[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side] = 2 #dim must equal 2
@@ -152,7 +153,7 @@ if __name__ == "__main__":
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
         constraintes[0:numEle[0]+1,1] = 0
-        constraintes[0:np.prod(numEle)+1:numEle[0],0] = 0
+        constraintes[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,0] = 0
     
 
 #### 
@@ -163,5 +164,7 @@ if __name__ == "__main__":
                mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
     mas.plotFigure(1,nodeCoords)
     mas.plotFigure(1,nodeCoords+ui)
+    
+    temp = ui[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,1]
     
    

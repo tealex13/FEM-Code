@@ -176,16 +176,16 @@ def stupidNormals(S,hardCodedJac,dim):
         if S == 0:
             normal = []
             print('error: no normals for S = 0')
-        elif S == 2:
+        elif S == 1:
             temp = np.cross(hardCodedJac[:,0],np.array([0,0,1]))
             normal = 1/LA.norm(temp)*temp
-        elif S == 1:
+        elif S == 2:
             temp = np.cross(np.array([0,0,1]),hardCodedJac[:,0])
             normal = 1/LA.norm(temp)*temp
-        elif S == 4:
+        elif S == 3:
             temp = np.cross(np.array([0,0,1]),hardCodedJac[:,1])
             normal = 1/LA.norm(temp)*temp
-        elif S == 3:
+        elif S == 4:
             temp = np.cross(hardCodedJac[:,1],np.array([0,0,1]))
             normal = 1/LA.norm(temp)*temp
         
@@ -244,6 +244,8 @@ if __name__ == '__main__':
     (nodeCoords,eleNodesArray,edgeNodesArray) = mas.meshAssemble(numEle,eleSize)
     
     #print(CtoX([0,0],eleNodesArray,nodeCoords))
+    
+    stupidNormals(S,hardCodedJac,dim)
     
     ele = 1
     for i in range(np.sum(mCount)): #iterate through S
