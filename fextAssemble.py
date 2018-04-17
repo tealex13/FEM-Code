@@ -55,16 +55,18 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
             
             
             for j in range(mSize[-memDim]): #Iterate through each gauss point
-                               
+                              
                 # Construct basis at GP
                 (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
                 basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
-#                print("Gauss Point", j, "\n", basisSubset, "\n")
+#                print("Gauss Point", j, "\n", intScalFact, "\n")
                 if S == 0:
                     fa += np.outer(basisSubset,bodyForce[i,:dim])*intScalFact*gWArray[startingGW+j]
 #                    print(fa)
                 
                 if S > 0:
+                    if S == 1:
+                        a = 1
                     # Pressure
                     tempNormal = geas.stupidNormals(S,hardCodedJac,dim)
 #                    print(tempNormal[:dim],'\n',np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)]),'\n')
@@ -74,7 +76,11 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
                     # Traction
                     fa += np.outer(basisSubset,tractForce[i,dim*S:dim*(S+1)])*intScalFact*gWArray[startingGW+j]
 #                    print(hardCodedJac,'\n')
-#                    print(np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j],'\n')
+                    print(np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j],'\n')
+#                    print ("S", S, "\n normal \n", tempNormal,'\n')
+#            if S > 0:
+#                print (np.linalg.det(hardCodedJac[:2,:2]),'\n')
+                
                 
         Fext[tempNodes,:] += fa
     return(Fext)

@@ -15,7 +15,8 @@ v = 0.0 #poisons ratio
 Ri = 1 #Inside Radius
 Ro = 2 #Outside Radius
 P = .063653 #Pressure inside
-eleNum = 5 #number of elements in the radial direction
+P = .1
+eleNum = 20 #number of elements in the radial direction
 
 
 R = np.linspace(Ri,Ro,num = eleNum+1)

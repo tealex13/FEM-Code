@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     # Parameters
     dim = 2
-    numEle = [5]*dim
+    numEle = [20]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
@@ -134,7 +134,7 @@ if __name__ == "__main__":
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
         forceType[0:numEle[0],side] = 2
         forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
-        forces[0:numEle[0],side*dim+0]=.1
+        forces[0:numEle[0],side*dim+0]=-.1
         #Apply constraints
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         
@@ -142,8 +142,11 @@ if __name__ == "__main__":
         constraintes[0:(numEle[0]+1)**2:numEle[0]+1,0] = 0 #mesh must be square
         constraintes[numEle[0]:(numEle[0]+1)**2:numEle[0]+1,1] = 0 #mesh must be square
         
+        Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
+
+        
     elif case == 'patch':
-        nodeCoords[:,1] = nodeCoords[:,1]*((1-nodeCoords[:,0])*.4+1)
+#        nodeCoords[:,1] = nodeCoords[:,1]*((1-nodeCoords[:,0])*.4+1)
         # Construct force field
         side = 2
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
@@ -154,17 +157,19 @@ if __name__ == "__main__":
         constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
         constraintes[0:numEle[0]+1,1] = 0
         constraintes[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,0] = 0
+        
+        Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
     
 
 #### 
 
 ###############################################################################
-
-    ui = newtonRaph(dim,numEle,constit,gPArray,gWArray, 
-               mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
-    mas.plotFigure(1,nodeCoords)
-    mas.plotFigure(1,nodeCoords+ui)
-    
-    temp = ui[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,1]
+    if True:
+        ui = newtonRaph(dim,numEle,constit,gPArray,gWArray, 
+                   mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
+        mas.plotFigure(1,nodeCoords)
+        mas.plotFigure(1,nodeCoords+ui)
+        
+        temp = ui[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,1]
     
    

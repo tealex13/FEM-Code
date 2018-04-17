@@ -53,7 +53,7 @@ def basisSubsetAssemble(S,dim,basisArray,mCount,mSize,divDim = 0):
     '''
 #    basisSubset = np.zeros([len(basisArray[:,0]),mSize])
     sDim = memDim(S,dim,mCount)
-    startingPoint = np.sum(mSize[:-sDim])*(dim+1)+(S-np.sum(mCount[:-sDim]))*(dim+1)
+    startingPoint = np.sum(mSize[:-sDim]*mCount[:-sDim])*(dim+1)+(S-np.sum(mCount[:-sDim]))*(dim+1)*mSize[-sDim]
     endingPoint = startingPoint+mSize[-sDim]*(dim+1)
 #    print(np.arange(startingPoint,endingPoint,dim+1))
      
@@ -68,7 +68,9 @@ def basisSubsetGaussPoint(S,gaussPoint,dim,basisArray,mCount,mSize):
 #    basisSubset = np.zeros([len(basisArray[:,0]),mSize])
     sDim = memDim(S,dim,mCount)
     startingPoint = (np.sum(mSize[:-sDim])+(S-np.sum(mCount[:-sDim]))*mSize[-sDim]+gaussPoint)*(dim+1)
+    startingPoint = np.sum(mSize[:-sDim]*mCount[:-sDim])*(dim+1)+(S-np.sum(mCount[:-sDim]))*(dim+1)*mSize[-sDim]+gaussPoint*(dim+1)
 
+    
     endingPoint = startingPoint+(dim+1)
 #    print(np.arange(startingPoint,endingPoint,dim+1))
      
@@ -102,7 +104,7 @@ def combonator(evalDim,dim):
     OUTPUTS:
         temp- the combinations of 0s and 1s
     '''
-    temp = mas.cartesian(np.matlib.repmat([1,0],dim,1))
+    temp = mas.cartesian(np.matlib.repmat([0,1],dim,1))
     temp = temp[np.sum(temp,1)==evalDim,:]
     return(temp)
     
@@ -173,6 +175,7 @@ def stupidNormals(S,hardCodedJac,dim):
         normal = []
         print('error: no normals for dim=1')
     elif dim == 2:
+        
         if S == 0:
             normal = []
             print('error: no normals for S = 0')
@@ -217,6 +220,7 @@ def stupidNormals(S,hardCodedJac,dim):
         else:
             normal = []
             print('error: S outside of range')
+    
     return(normal)
 
 def basisdX(S,gaussPoint,dim,basisArray,mCount,mSize,hardCodedJac):
