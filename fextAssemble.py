@@ -72,11 +72,12 @@ def fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
 #                    print(tempNormal[:dim],'\n',np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)]),'\n')
 #                    tempNormal = np.matlib.repmat(tempNormal[:dim],len(basisSubset),1)
 #                    fa += np.outer(basisSubset,pressForce[i,dim*S:dim*(S+1)])*tempNormal*intScalFact*gWArray[startingGW+j]
+
                     fa += np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j]
                     # Traction
                     fa += np.outer(basisSubset,tractForce[i,dim*S:dim*(S+1)])*intScalFact*gWArray[startingGW+j]
 #                    print(hardCodedJac,'\n')
-                    print(np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j],'\n')
+#                    print(np.outer(basisSubset*pressForce[i,dim*S],tempNormal[:dim])*intScalFact*gWArray[startingGW+j],'\n')
 #                    print ("S", S, "\n normal \n", tempNormal,'\n')
 #            if S > 0:
 #                print (np.linalg.det(hardCodedJac[:2,:2]),'\n')

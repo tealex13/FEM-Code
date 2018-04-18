@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     # Parameters
     dim = 2
-    numEle = [20]*dim
+    numEle = [10]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]

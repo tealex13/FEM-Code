@@ -12,6 +12,7 @@ import meshAssemble as mas
 import gaussAssemble as gas
 import basisAssemble as bas
 import geometryAssemble as geas
+import nonlinearFunctions as nlf
 
 def bAssemble(basisdX):
     dim = len(basisdX)
@@ -57,6 +58,8 @@ def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
             # Contruct Geometry at GP
             basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
             # Compute Current Strain
+            
+            print(nlf.defGrad(basisdXArray, tempDisp),'\n')
             strain = [0]
             for k in range(len(basisSubset)): #iterate through each basis
                 Ba = bAssemble(basisdXArray[k,:])
@@ -92,8 +95,9 @@ if __name__ == '__main__':
     disp = np.zeros([len(nodeCoords[:,0]),dim])*0
     
     disp[0:9:3,:] = 0
-#    disp[1:9:3,:] = .05
-    disp[2:9:3,0] = .1
+    disp[1:9:3,0] = .05
+    disp[2:9:3,0] = 0.1
+
 
     constit = constitAssemble(E,v,dim)
     
