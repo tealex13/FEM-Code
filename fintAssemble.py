@@ -59,14 +59,26 @@ def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
             basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
             # Compute Current Strain
             
-            print(nlf.defGrad(basisdXArray, tempDisp),'\n')
-            strain = [0]
-            for k in range(len(basisSubset)): #iterate through each basis
-                Ba = bAssemble(basisdXArray[k,:])
-                strain = strain + np.matmul(Ba,tempDisp[k,:])
+            dUdX = nlf.partDeformationGrad(basisdXArray, tempDisp)
+            [F,J] = nlf.deformationGrad(dUdX)
+            gStrain = nlf.greenLagrangeStrain(dUdX)
+            Cref = nlf.constitutiveCreater(F,J,constit)
+            pkS = nlf.pkStress(gStrain,Cref)
+#            stress = 
+            stress = nlf.coachyStress(pkS,F,J)
+#            strain = [0]
+#            for k in range(len(basisSubset)): #iterate through each basis
+#                Ba = bAssemble(basisdXArray[k,:])
+#                strain = strain + np.matmul(Ba,tempDisp[k,:])
+#
+#            # Calculate Stress
+#            stress = np.matmul(constit,strain)
+            
+            # Recalculate basis DX array
+            tempNodeCoords = nodeCoords+disp
 
-            # Calculate Stress
-            stress = np.matmul(constit,strain)
+            (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
+            basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             for k in range(len(basisSubset)): #iterate through each basis
                 Ba = bAssemble(basisdXArray[k,:])
 #                for l in range(dim):

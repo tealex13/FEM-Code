@@ -14,6 +14,7 @@ import geometryAssemble as geas
 import fintAssemble as fint
 import fextAssemble as fext
 import loadAssemble as load
+import nonlinearFunctions as nlf
 
 def indexAssemble(eleNodesArray,dim):
     temp = eleNodesArray*dim
@@ -24,27 +25,48 @@ def indexAssemble(eleNodesArray,dim):
     index = np.matlib.repmat(index,len(index),1).astype(int)
     return(index)
         
-def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray):
+def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray,ui):
     K = np.zeros([len(nodeCoords[:,0])*dim,len(nodeCoords[:,0])*dim])
     for i in range(np.prod(numEle)): #Iterate through each element
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
         tempK = np.zeros([len(basisArray[:,0])*dim,len(basisArray[:,0])*dim])
+        
+        tempDisp = ui[eleNodesArray[:,i],:]
         for j in range(mSize[-memDim]): #Iterate through each gauss point 
 
             # Construct basis at GP
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             
+            basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
+            # Compute Current Strain
             
+            dUdX = nlf.partDeformationGrad(basisdXArray, tempDisp)
+            [F,J] = nlf.deformationGrad(dUdX)
+            gStrain = nlf.greenLagrangeStrain(dUdX)
+            Cref = nlf.constitutiveCreater(F,J,constit)
+            pkS = nlf.pkStress(gStrain,Cref)
+#            stress = 
+            stress = nlf.fromVoigt(nlf.coachyStress(pkS,F,J))
+            # Recalculate basis DX array
+            tempNodeCoords = nodeCoords+disp
+
+            (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
+            basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             for k in range(len(basisdXArray[:,0])): #iterate through each basis
                 Ba1 = fint.bAssemble(basisdXArray[k,:])
                 for l in range(len(basisdXArray[:,0])): #iterate through each basis
                     Ba2 = fint.bAssemble(basisdXArray[l,:])
 #                    tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += (np.matmul(np.matmul(np.transpose(Ba1[:dim,:dim]),constit[:dim,:dim]),Ba2[:dim,:dim])
 #                                    *intScalFact*gWArray[j])
-                    tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += (np.matmul(np.matmul(np.transpose(Ba1),constit),Ba2)
+                    Km = (np.matmul(np.matmul(np.transpose(Ba1),constit),Ba2)
                                     *intScalFact*gWArray[j])
+                    Kg = np.zeros([2,2])
+                    Kg[[0,1],[0,1]] = (np.matmul(np.matmul(basisdXArray[k,:],stress),basisdXArray[l,:].transpose())
+                                    *intScalFact*gWArray[j])
+                    tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += Km + Kg
+                    
 #                    print(Ba1,'\n',Ba2,'\n')
 
         index = indexAssemble(eleNodesArray[:,i],dim)                     
@@ -57,7 +79,7 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
     eps = 10**-5
     Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
     
-    contrainte2D = constraintes.astype(bool)
+    constrainte2D = constraintes.astype(bool)
     constraintes = constraintes.flatten().astype(bool) 
     
     #Iterate
@@ -77,7 +99,7 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
         while i < iMax:
             Fint = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,ui)
 #            print(Fext - Fint)
-            Ri = (Fext - Fint)[contrainte2D]
+            Ri = (Fext - Fint)[constrainte2D]
             
             if np.linalg.norm(Ri) < eps*R0:
                 print(i,'solved','Ri =',np.linalg.norm(Ri))
@@ -86,11 +108,12 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
             else:
                 print('Ri =',np.linalg.norm(Ri))
 #                print(i)
-                K = kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray)
+                tempNodeCoords = nodeCoords + ui
+                K = kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray,ui)
 
                 deltU = np.linalg.solve(K[:,constraintes][constraintes,:],Ri)
 #                print(i,deltU)
-                ui[contrainte2D] = ui[contrainte2D] + deltU
+                ui[constrainte2D] = ui[constrainte2D] + deltU ################################################### I think deltU needs to be changed to frame
 #                print('ui =',ui[contrainte2D])
                 i += 1
     return(ui)
@@ -104,7 +127,7 @@ if __name__ == "__main__":
     
     # Parameters
     dim = 2
-    numEle = [10]*dim
+    numEle = [5]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
@@ -134,7 +157,7 @@ if __name__ == "__main__":
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
         forceType[0:numEle[0],side] = 2
         forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
-        forces[0:numEle[0],side*dim+0]=-.1
+        forces[0:numEle[0],side*dim+0]=-.01
         #Apply constraints
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         
