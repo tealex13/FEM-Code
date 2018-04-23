@@ -45,6 +45,7 @@ def constitAssemble(E,v,dim):
 def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp):
     
     Fint = np.zeros([len(nodeCoords[:,0]),dim])
+    tempNodeCoords = nodeCoords+disp
     for i in range(np.prod(numEle)): #Iterate through each element
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
@@ -75,7 +76,6 @@ def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
 #            stress = np.matmul(constit,strain)
             
             # Recalculate basis DX array
-            tempNodeCoords = nodeCoords+disp
 
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)

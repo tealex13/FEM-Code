@@ -27,12 +27,14 @@ def indexAssemble(eleNodesArray,dim):
         
 def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray,ui):
     K = np.zeros([len(nodeCoords[:,0])*dim,len(nodeCoords[:,0])*dim])
+    tempNodeCoords = nodeCoords+ui
     for i in range(np.prod(numEle)): #Iterate through each element
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
         tempK = np.zeros([len(basisArray[:,0])*dim,len(basisArray[:,0])*dim])
         
         tempDisp = ui[eleNodesArray[:,i],:]
+        # current coordinate frame
         for j in range(mSize[-memDim]): #Iterate through each gauss point 
 
             # Construct basis at GP
@@ -49,9 +51,8 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
             pkS = nlf.pkStress(gStrain,Cref)
 #            stress = 
             stress = nlf.fromVoigt(nlf.coachyStress(pkS,F,J))
+#            print(dUdX,'\n')
             # Recalculate basis DX array
-            tempNodeCoords = nodeCoords+disp
-
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             for k in range(len(basisdXArray[:,0])): #iterate through each basis
@@ -63,8 +64,10 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
                     Km = (np.matmul(np.matmul(np.transpose(Ba1),constit),Ba2)
                                     *intScalFact*gWArray[j])
                     Kg = np.zeros([2,2])
+                    
                     Kg[[0,1],[0,1]] = (np.matmul(np.matmul(basisdXArray[k,:],stress),basisdXArray[l,:].transpose())
                                     *intScalFact*gWArray[j])
+                    
                     tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += Km + Kg
                     
 #                    print(Ba1,'\n',Ba2,'\n')
@@ -123,16 +126,16 @@ if __name__ == "__main__":
     #setup
     plt.pyplot.close('all')
     case = 'pressure'
-#    case = 'patch'
+    case = 'patch'
     
     # Parameters
     dim = 2
-    numEle = [5]*dim
+    numEle = [2]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
     E = 200*10**9 #modulus
-    E = 1#modulus
+#    E = 1#modulus
     v = 0.0 #poisons ratio
     
 ###############################################################################    
@@ -171,11 +174,18 @@ if __name__ == "__main__":
     elif case == 'patch':
 #        nodeCoords[:,1] = nodeCoords[:,1]*((1-nodeCoords[:,0])*.4+1)
         # Construct force field
-        side = 2
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
-        forceType[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side] = 2 #dim must equal 2
         forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
-        forces[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side*dim+0]=.1
+        
+#        side = 2
+#        forceType[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side] = 3 #dim must equal 2
+#        forces[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side*dim+0]=1e10
+        side = 4
+        forceType[[3],side] = 3 #dim must equal 2
+        forces[[3],side*dim+0]=1e10
+        side = 2
+        forceType[[2,3],side] = 3 #dim must equal 2
+        forces[[2,3],side*dim+1]=2e10
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
         constraintes[0:numEle[0]+1,1] = 0

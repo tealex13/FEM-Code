@@ -23,7 +23,8 @@ def fromVoigt(matrix):
         matrix = np.array([[matrix[0],matrix[2]],[matrix[2],matrix[1]]])
     return(matrix)
     
-def partDeformationGrad(basisdXArray, ui): 
+def partDeformationGrad(basisdXArray, ui):
+    print(np.matmul(ui.transpose(),basisdXArray),'\n')
     return np.matmul(ui.transpose(),basisdXArray)
 
 def deformationGrad(dUdX):
