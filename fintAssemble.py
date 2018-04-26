@@ -41,18 +41,27 @@ def constitAssemble(E,v,dim):
     
     return(constit)
 #def dispToStrain(disp):
-    
+def vonMises(s):
+    s1 = s[0]
+    s2 = s[1]
+    s12 = s[2]
+    vonM = (s1**2 - 1*s2 + s2**2 + 3*s12**2)**(1/2)
+    return(vonM)
+   
 def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,disp):
     
     Fint = np.zeros([len(nodeCoords[:,0]),dim])
     tempNodeCoords = nodeCoords+disp
+    vonM = np.zeros(np.prod(numEle))
     for i in range(np.prod(numEle)): #Iterate through each element
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
         tempDisp = disp[eleNodesArray[:,i],:]
         Fa = np.zeros([len(basisArray[:,0]),dim])
         for j in range(mSize[-memDim]): #Iterate through each gauss point 
-
+            
+#            [temp1,temp2] = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,disp,eleNodesArray)
+            
             # Construct basis at GP
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
@@ -61,22 +70,17 @@ def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
             # Compute Current Strain
             
             dUdX = nlf.partDeformationGrad(basisdXArray, tempDisp)
+#            dUdX = temp2[:dim,:dim]
+#            print(dUdX,'\n')
             [F,J] = nlf.deformationGrad(dUdX)
             gStrain = nlf.greenLagrangeStrain(dUdX)
+            
             Cref = nlf.constitutiveCreater(F,J,constit)
             pkS = nlf.pkStress(gStrain,Cref)
 #            stress = 
             stress = nlf.coachyStress(pkS,F,J)
-#            strain = [0]
-#            for k in range(len(basisSubset)): #iterate through each basis
-#                Ba = bAssemble(basisdXArray[k,:])
-#                strain = strain + np.matmul(Ba,tempDisp[k,:])
-#
-#            # Calculate Stress
-#            stress = np.matmul(constit,strain)
-            
-            # Recalculate basis DX array
 
+            vonM[i] += vonMises(stress)*gWArray[j]
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             for k in range(len(basisSubset)): #iterate through each basis
@@ -87,7 +91,7 @@ def fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNode
                 Fa[k,:] = np.matmul(np.transpose(Ba),stress)*intScalFact*gWArray[j]+Fa[k,:]
 #        print(Fa)
         Fint[eleNodesArray[:,i],:] = Fa+Fint[eleNodesArray[:,i],:]
-    return(Fint)
+    return(Fint,vonM)
 
 if __name__ == '__main__':
     dim = 2

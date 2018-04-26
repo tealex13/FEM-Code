@@ -32,6 +32,8 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
         S = 0 # (S=0 for internal)
         memDim = geas.memDim(S,dim,mCount)
         tempK = np.zeros([len(basisArray[:,0])*dim,len(basisArray[:,0])*dim])
+        tempKg = np.zeros([len(basisArray[:,0])*dim,len(basisArray[:,0])*dim])
+        tempKm = np.zeros([len(basisArray[:,0])*dim,len(basisArray[:,0])*dim])
         
         tempDisp = ui[eleNodesArray[:,i],:]
         # current coordinate frame
@@ -40,20 +42,28 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
             # Construct basis at GP
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,nodeCoords,eleNodesArray)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
-            
+#            print(intScalFact)
             basisSubset = geas.basisSubsetGaussPoint(S,j,dim,basisArray,mCount,mSize)[:,0]
             # Compute Current Strain
             
             dUdX = nlf.partDeformationGrad(basisdXArray, tempDisp)
-            [F,J] = nlf.deformationGrad(dUdX)
-            gStrain = nlf.greenLagrangeStrain(dUdX)
-            Cref = nlf.constitutiveCreater(F,J,constit)
-            pkS = nlf.pkStress(gStrain,Cref)
-#            stress = 
-            stress = nlf.fromVoigt(nlf.coachyStress(pkS,F,J))
 #            print(dUdX,'\n')
+
+            [F,J] = nlf.deformationGrad(dUdX)
+#            print(F,'\n',J,'\n')
+            gStrain = nlf.greenLagrangeStrain(dUdX)
+#            print(gStrain,'\n')
+            Cref = nlf.constitutiveCreater(F,J,constit)
+#            print(Cref,'\n')
+            pkS = nlf.pkStress(gStrain,Cref)
+#            print(pkS,'\n')
+
+            stress = nlf.fromVoigt(nlf.coachyStress(pkS,F,J))
+#            print(stress,'\n')
+#    
             # Recalculate basis DX array
             (intScalFact,hardCodedJac) = geas.gaussJacobian(S,i,j,dim,basisArray,mCount,mSize,tempNodeCoords,eleNodesArray)
+#            print(intScalFact)
             basisdXArray = geas.basisdX(S,j,dim,basisArray,mCount,mSize,hardCodedJac)
             for k in range(len(basisdXArray[:,0])): #iterate through each basis
                 Ba1 = fint.bAssemble(basisdXArray[k,:])
@@ -61,19 +71,26 @@ def kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,el
                     Ba2 = fint.bAssemble(basisdXArray[l,:])
 #                    tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += (np.matmul(np.matmul(np.transpose(Ba1[:dim,:dim]),constit[:dim,:dim]),Ba2[:dim,:dim])
 #                                    *intScalFact*gWArray[j])
-                    Km = (np.matmul(np.matmul(np.transpose(Ba1),constit),Ba2)
+                    Km = (np.matmul(np.matmul(np.transpose(Ba1),Cref),Ba2)
                                     *intScalFact*gWArray[j])
                     Kg = np.zeros([2,2])
                     
+#                    print(np.matmul(np.matmul(basisdXArray[k,:],stress),basisdXArray[l,:].transpose())
+#                                    *intScalFact*gWArray[j])
                     Kg[[0,1],[0,1]] = (np.matmul(np.matmul(basisdXArray[k,:],stress),basisdXArray[l,:].transpose())
-                                    *intScalFact*gWArray[j])
+                                    *intScalFact*gWArray[j])*6.95
+                    
+#                    print(intScalFact) 9.53366
+                    tempKg[dim*k:dim*(k+1),dim*l:dim*(l+1)] += Kg
+#                    print(tempKg)
+                    tempKm[dim*k:dim*(k+1),dim*l:dim*(l+1)] += Km
                     
                     tempK[dim*k:dim*(k+1),dim*l:dim*(l+1)] += Km + Kg
                     
 #                    print(Ba1,'\n',Ba2,'\n')
 
         index = indexAssemble(eleNodesArray[:,i],dim)                     
-        
+#        print(tempKg,'\n')
         K[index,np.transpose(index)] += tempK
     return(K)
 
@@ -86,7 +103,7 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
     constraintes = constraintes.flatten().astype(bool) 
     
     #Iterate
-    iMax = 10
+    iMax =  1
     nMax = 1
     
     n = 0 
@@ -100,18 +117,18 @@ def newtonRaph(dim,numEle,constit,gPArray,gWArray,
         i = 0
         ui = disp
         while i < iMax:
-            Fint = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,ui)
+            (Fint,VM) = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,ui)
 #            print(Fext - Fint)
             Ri = (Fext - Fint)[constrainte2D]
             
-            if np.linalg.norm(Ri) < eps*R0:
+#            if np.linalg.norm(Ri) < eps*R0:
+            if np.linalg.norm(Ri) < eps:
                 print(i,'solved','Ri =',np.linalg.norm(Ri))
 
                 break
             else:
-                print('Ri =',np.linalg.norm(Ri))
+                print('iteration =', i,'Ri =',np.linalg.norm(Ri))
 #                print(i)
-                tempNodeCoords = nodeCoords + ui
                 K = kAssemble(dim,numEle,constit,gWArray,mCount, mSize, basisArray,nodeCoords,eleNodesArray,ui)
 
                 deltU = np.linalg.solve(K[:,constraintes][constraintes,:],Ri)
@@ -126,11 +143,11 @@ if __name__ == "__main__":
     #setup
     plt.pyplot.close('all')
     case = 'pressure'
-    case = 'patch'
+#    case = 'patch'
     
     # Parameters
     dim = 2
-    numEle = [2]*dim
+    numEle = [5]*dim
     eleSize = [1]*dim
     numBasis = 2
     gaussPoints = [-1/np.sqrt(3),1/np.sqrt(3)]
@@ -160,7 +177,7 @@ if __name__ == "__main__":
         forceType = np.zeros([np.prod(numEle),np.sum(mCount)])
         forceType[0:numEle[0],side] = 2
         forces = np.zeros([np.prod(numEle),np.sum(mCount)*dim])
-        forces[0:numEle[0],side*dim+0]=-.01
+        forces[0:numEle[0],side*dim+0]=-1e10
         #Apply constraints
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         
@@ -180,18 +197,22 @@ if __name__ == "__main__":
 #        side = 2
 #        forceType[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side] = 3 #dim must equal 2
 #        forces[numEle[0]*(numEle[1]-1):numEle[0]*numEle[1],side*dim+0]=1e10
+        
         side = 4
-        forceType[[3],side] = 3 #dim must equal 2
-        forces[[3],side*dim+0]=1e10
-        side = 2
-        forceType[[2,3],side] = 3 #dim must equal 2
-        forces[[2,3],side*dim+1]=2e10
+        forceType[[24],side] = 3 #dim must equal 2
+        forces[[24],side*dim+0]=1e10
+#        forceType[[1,3],side] = 3 #dim must equal 2
+#        forces[[1,3],side*dim+0]=1e10
+#        side = 2
+#        forceType[[2,3],side] = 3 #dim must equal 2
+#        forces[[2,3],side*dim+1]=1e10
         disp = np.zeros([len(nodeCoords[:,0]),dim])
         constraintes = np.ones([len(nodeCoords[:,0]),dim]) 
         constraintes[0:numEle[0]+1,1] = 0
         constraintes[0:np.prod(numEle)+numEle[0]+1:numEle[0]+1,0] = 0
         
         Fext = fext.fextAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType)
+        
     
 
 #### 
@@ -200,6 +221,8 @@ if __name__ == "__main__":
     if True:
         ui = newtonRaph(dim,numEle,constit,gPArray,gWArray, 
                    mCount, mSize,basisArray,nodeCoords,eleNodesArray,forces,forceType,disp,constraintes)
+        Fint,vonM = fint.fintAssemble(dim,numEle,gWArray, mCount, mSize,basisArray,nodeCoords,eleNodesArray,constit,ui)
+        mas.PlotStress(1, nodeCoords+ui,vonM,eleNodesArray)
         mas.plotFigure(1,nodeCoords)
         mas.plotFigure(1,nodeCoords+ui)
         

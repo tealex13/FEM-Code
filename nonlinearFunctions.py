@@ -24,7 +24,7 @@ def fromVoigt(matrix):
     return(matrix)
     
 def partDeformationGrad(basisdXArray, ui):
-    print(np.matmul(ui.transpose(),basisdXArray),'\n')
+#    print(np.matmul(ui.transpose(),basisdXArray),'\n')
     return np.matmul(ui.transpose(),basisdXArray)
 
 def deformationGrad(dUdX):
@@ -33,7 +33,7 @@ def deformationGrad(dUdX):
     return(F,J)
     
 def constitutiveCreater(F,J,C):
-    findex = np.array([[1,1,1,1],[1,1,2,2],[1,1,1,2],[2,2,1,1],[2,2,2,2],[2,2,1,2],[1,2,1,1],[1,2,2,2],[1,2,1,2]])-1 
+    findex = np.array([[1,1,1,1],[1,1,2,2],[1,1,1,2],[2,2,1,1],[2,2,2,2],[2,2,1,2],[1,2,1,1],[1,2,2,2],[1,2,1,2]])-1
     
     Cref = np.zeros([9,1]) #hardcoded
     for i in range(len(Cref)):
@@ -47,7 +47,7 @@ def greenLagrangeStrain(dUdX):
     
     gStrain = 1/2*(dUdX+dUdX.transpose()+np.matmul(dUdX.transpose(),dUdX))
     if len(gStrain) == 2:
-        return (np.array([gStrain[0,0],gStrain[1,1],gStrain[0,1]]))
+        return (toVoigt(gStrain))
     else:
         print('error: not 2d')
         return ([])

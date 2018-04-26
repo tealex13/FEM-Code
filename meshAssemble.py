@@ -8,6 +8,8 @@ Created on Fri Jan 19 16:53:15 2018
 import numpy as np
 import matplotlib.pyplot as plt 
 from mpl_toolkits.mplot3d import axes3d, Axes3D #<-- Note the capitalization! 
+import matplotlib.colors as colors
+import matplotlib.cm as cmx
 import itertools
 
 def binaryCounterMatrix(dim):
@@ -191,6 +193,45 @@ def plotFigure(figNum, nodeCoords):
         ax.scatter(nodeCoords[:,0], nodeCoords[:,1],cmap='Greens')
     elif len(nodeCoords[0,:]) == 1:
         ax.scatter(nodeCoords[:,0], np.zeros(len(nodeCoords[:,0])),cmap='Greens')
+    plt.show()
+
+def PlotStress(figNum, nodeCoords,vonM,eleNodesArray):
+    fig = plt.figure(figNum)
+    srink = .9
+    if fig.axes:
+        ax = fig.axes[0]
+    else:      
+        if len(nodeCoords[0,:]) == 3:
+            ax = Axes3D(fig)
+        else:
+            ax = fig.add_subplot(111)
+    jet = cm = plt.get_cmap('jet') 
+    cNorm  = colors.Normalize(vmin=0, vmax=np.max(vonM))
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap=jet)
+    for i in range(len(eleNodesArray[0,:])):
+
+        colorVal = scalarMap.to_rgba(vonM[i])
+        tCoords = nodeCoords[eleNodesArray[:,i],:]
+        tCoords = tCoords[[0,1,3,2],:]
+        xmean = np.average(tCoords[:,0])
+        ymean = np.average(tCoords[:,1])
+        tCoords[:,0] = (tCoords[:,0]-xmean)*srink+xmean
+        tCoords[:,1] = (tCoords[:,1]-ymean)*srink+ymean
+        temptext = '%.2E' % vonM[i]
+        ax.text(xmean, ymean, temptext,ha="center", va="center", color="k")
+        for j in range(4):
+            x = np.linspace(tCoords[j,0],tCoords[(j+1)%4,0],1000)
+            y = np.linspace(tCoords[j,1],tCoords[(j+1)%4,1],1000)
+            ax.scatter(x,y,color=colorVal)
+            
+#        cbar = ax.figure.colorbar(im, ax=ax, **cbar_kw)
+        
+#    if len(nodeCoords[0,:]) == 3:
+#        ax.scatter(nodeCoords[:,0], nodeCoords[:,1], nodeCoords[:,2],cmap='Greens')  
+#    elif len(nodeCoords[0,:]) == 2:
+#        ax.scatter(nodeCoords[:,0], nodeCoords[:,1],cmap='Greens')
+#    elif len(nodeCoords[0,:]) == 1:
+#        ax.scatter(nodeCoords[:,0], np.zeros(len(nodeCoords[:,0])),cmap='Greens')
     plt.show()
         
         
